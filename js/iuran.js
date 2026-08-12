@@ -1,0 +1,831 @@
+let rawIuranData = [];
+let iuranHeaders = [];
+let activeBayarId = null;
+
+async function loadIuranView() {
+  document.getElementById('main-content').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><br><small class="text-muted mt-2 d-block">Memuat data iuran...</small></div>';
+  const res = await callGASGet('getIuranData');
+  if (res && res.status === 'success') {
+    rawIuranData = res.rows || [];
+    iuranHeaders = (res.headers || []).map(h => h.toLowerCase().trim());
+    renderIuranCustom(res);
+  } else {
+    document.getElementById('main-content').innerHTML = `<div class="alert alert-danger">${res.message || 'Gagal memuat data'}</div>`;
+  }
+}
+window.loadIuranView = loadIuranView;
+
+function getVal(r, headers, colName, defaultVal = '') {
+  let idx = headers.indexOf(colName.toLowerCase());
+  return idx > -1 && r[idx] !== undefined && r[idx] !== "" ? r[idx] : defaultVal;
+}
+
+function renderIuranCustom(data) {
+  let headers = (data.headers || []).map(h => h.toLowerCase().trim());
+  let rows = data.rows || [];
+  let nominalIdx = headers.indexOf('nominal');
+  let statusIdx = headers.indexOf('status');
+  
+  // Pengecekan role yang lebih aman & kebal spasi/huruf kecil
+  let currentRole = (typeof session !== 'undefined' && session && session.role) ? String(session.role).trim().toUpperCase() : '';
+  let isRT = currentRole === 'RT' || currentRole === 'ADMIN';
+
+  let totalLunas = 0;
+  let totalMenunggu = 0;
+  let totalBelumLunas = 0;
+  let countMenunggu = 0;
+
+  rows.forEach(r => {
+    let statusVal = statusIdx > -1 ? (r[statusIdx] || '') : 'Belum Lunas';
+    let statusLower = statusVal.toLowerCase().trim();
+    let nominalVal = nominalIdx > -1 ? (Number(r[nominalIdx].toString().replace(/[^0-9]/g, '')) || 0) : 0;
+    
+    if (statusLower.includes('lunas') && !statusLower.includes('belum')) {
+      totalLunas += nominalVal;
+    } else if (statusLower.includes('menunggu') || statusLower.includes('verifikasi')) {
+      totalMenunggu += nominalVal;
+      countMenunggu++;
+    } else {
+      totalBelumLunas += nominalVal;
+    }
+  });
+
+  let html = `
+    <div class="p-1 text-gray-800 font-sans">
+      <!-- Header Banner Status Iuran -->
+      <div class="bg-gradient-to-r from-blue-900 to-blue-600 text-white p-5 rounded-2xl shadow-md mb-4 text-center">
+        <h2 class="font-bold text-lg mb-1"><i class="bi bi-wallet2 me-2"></i>Status Iuran Warga ${new Date().getFullYear()}</h2>
+        <p class="text-xs text-blue-100">Transparan, Cek Status & Pembayaran Bulanan Warga Pekuncen</p>
+      </div>
+      <!-- Tombol Tambah Khusus RT -->
+      ${isRT ? `
+        <div class="mb-4 flex justify-end">
+          <button onclick="bukaModalTambahIuranRT()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
+            <i class="bi bi-plus-circle-fill"></i> + Tambah Tagihan / Iuran Warga
+          </button>
+        </div>
+      ` : ''}
+      <!-- Card Ringkasan Tagihan -->
+      ${isRT ? `
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h4 class="font-bold text-gray-800 text-sm">Administrator RT (Pengelola Iuran)</h4>
+              <p class="text-[10px] text-gray-400 font-mono">NIK: ${session?.nik || '-'} | Role: RT</p>
+            </div>
+            <span class="bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-purple-100"><i class="bi bi-shield-lock me-1"></i> Admin RT</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-xl">
+              <p class="text-[10px] text-emerald-600 uppercase font-bold">Total Iuran Terkumpul</p>
+              <p class="font-bold text-emerald-700 text-sm md:text-base">Rp ${totalLunas.toLocaleString('id-ID')}</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl">
+              <p class="text-[10px] text-amber-600 uppercase font-bold">Menunggu Verifikasi (${countMenunggu})</p>
+              <p class="font-bold text-amber-700 text-sm md:text-base">Rp ${totalMenunggu.toLocaleString('id-ID')}</p>
+            </div>
+            <div class="bg-rose-50 border border-rose-100 p-3 rounded-xl">
+              <p class="text-[10px] text-rose-500 uppercase font-bold">Belum Lunas Warga</p>
+              <p class="font-bold text-rose-700 text-sm md:text-base">Rp ${totalBelumLunas.toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+        </div>
+      ` : `
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h4 class="font-bold text-gray-800 text-sm" id="iuran-nama-warga">${session?.nama || session?.nik || '-'}</h4>
+              <p class="text-[10px] text-gray-400 font-mono">NIK: ${session?.nik || '-'} | Role: ${session?.role || '-'}</p>
+            </div>
+            <span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-blue-100">Aktif</span>
+          </div>
+          ${totalBelumLunas > 0 ? `
+            <div class="bg-rose-50 border border-rose-100 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p class="text-[10px] text-rose-500 uppercase font-bold">Total Belum Bayar</p>
+                <p class="font-bold text-rose-700 text-base" id="total-belum-bayar">Rp ${totalBelumLunas.toLocaleString('id-ID')}</p>
+              </div>
+              <button onclick="bukaModalBayarSekaligusAll()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer">
+                <i class="bi bi-wallet2"></i> Bayar Sekaligus
+              </button>
+            </div>
+          ` : `
+            <div class="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p class="text-[10px] text-emerald-600 uppercase font-bold">Status Tagihan</p>
+                <p class="font-bold text-emerald-700 text-sm md:text-base"><i class="bi bi-check-circle-fill me-1"></i> Tidak Ada Tagihan Menunggak</p>
+              </div>
+            </div>
+          `}
+        </div>
+      `}
+      <!-- Floating Bar Pilih Tagihan -->
+      <div id="selected-iuran-bar" class="hidden bg-blue-50 border border-blue-200 p-3 rounded-2xl flex justify-between items-center text-xs mb-3 shadow-sm">
+        <span id="selected-iuran-text" class="font-bold text-blue-800">0 Tagihan Terpilih</span>
+        <button onclick="bukaModalBayarTerpilih()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">
+          <i class="bi bi-wallet2"></i> Bayar Terpilih (<span id="selected-iuran-nominal">Rp 0</span>)
+        </button>
+      </div>
+      <!-- List Bulan Iuran -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 p-3 space-y-2">
+        <h3 class="font-bold text-xs text-gray-500 uppercase px-2 mb-2">${isRT ? 'Semua Riwayat & Tagihan Warga' : 'Daftar Tagihan Iuran Warga'}</h3>
+        <div id="list-bulan-iuran" class="space-y-2">
+          <!-- Render via JS -->
+        </div>
+      </div>
+    </div>
+    <!-- MODAL PEMBAYARAN / UPLOAD BUKTI TRANSFER -->
+    <div id="modal-bayar-iuran" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-2xl relative font-sans">
+        <!-- Tombol Tutup -->
+        <button onclick="tutupModalBayarIuran()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 z-50 transition">&times;</button>
+        <div class="mb-3 border-b pb-2 pe-8">
+          <h3 class="font-bold text-gray-800 text-sm"><i class="bi bi-shield-check text-blue-600 me-1"></i> Pembayaran Iuran</h3>
+          <p id="info-bayar-target" class="text-xs text-blue-600 font-bold mt-1">-</p>
+        </div>
+        <div class="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-xl mb-3 text-xs font-bold text-center">
+          <button id="tab-qris-btn" onclick="switchTabBayar('qris')" class="py-2 rounded-lg bg-white text-blue-600 shadow-sm transition">Scan QRIS</button>
+          <button id="tab-tf-btn" onclick="switchTabBayar('tf')" class="py-2 rounded-lg text-gray-500 transition">Transfer Bank</button>
+        </div>
+        <!-- TAMPILAN QRIS -->
+        <div id="content-qris" class="text-center space-y-2">
+          <p class="text-[10px] text-gray-500">Scan QRIS ini, nominal akan otomatis terisi sesuai tagihan:</p>
+          <div class="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm inline-block">
+            <h5 class="font-bold text-gray-900 text-xs mb-2" id="qris-merchant-name">SHN GROUP</h5>
+            <div id="qris-canvas-container" class="flex justify-center p-2 bg-white rounded-xl shadow-inner border border-gray-100 min-h-[200px] items-center">
+              <img id="qris-dynamic-img" src="" class="max-w-[200px] max-h-[200px] rounded-lg shadow-sm" alt="Dynamic QRIS">
+              <canvas id="qris-canvas" class="hidden max-w-[200px] max-h-[200px]"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- TAMPILAN TRANSFER BANK -->
+        <div id="content-tf" class="hidden text-xs space-y-2">
+          <div id="bank-accounts-list" class="space-y-2 max-h-48 overflow-y-auto pe-1">
+            <!-- Dt Rekening dari Settings -->
+          </div>
+        </div>
+        <!-- FORM UPLOAD BUKTI -->
+        <form id="form-upload-iuran" onsubmit="submitBuktiIuran(event)" class="mt-4 border-t pt-3 space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-gray-700 mb-1">Unggah Bukti Transfer / Pembayaran</label>
+            <input type="file" id="file-bukti-iuran" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 transition" required>
+          </div>
+          <button type="submit" id="btn-submit-iuran" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
+            Kirim Bukti Pembayaran
+          </button>
+        </form>
+      </div>
+    </div>
+  `;
+  document.getElementById('main-content').innerHTML = html;
+  renderListBulanDatabase(rows, headers);
+}
+
+function renderListBulanDatabase(rows, headers) {
+  let container = document.getElementById('list-bulan-iuran');
+  if(!container) return;
+  container.innerHTML = '';
+  if (rows.length === 0) {
+    container.innerHTML = `<div class="text-center p-4 text-gray-400 text-xs">Belum ada data iuran atau tagihan tercatat.</div>`;
+    return;
+  }
+  let currentRole = (typeof session !== 'undefined' && session && session.role) ? String(session.role).trim().toUpperCase() : '';
+  let isRT = currentRole === 'RT' || currentRole === 'ADMIN';
+
+  let idIdx = headers.indexOf('id') > -1 ? headers.indexOf('id') : 0;
+  rows.forEach((r) => {
+    let rowId = r[idIdx] || '';
+    let bulanVal = getVal(r, headers, 'bulan', '-');
+    let tahunVal = getVal(r, headers, 'tahun', new Date().getFullYear().toString());
+    let namaVal = getVal(r, headers, 'nama', '-');
+    let nominalRaw = getVal(r, headers, 'nominal', '0');
+    let nominalVal = Number(nominalRaw.toString().replace(/[^0-9]/g, '')) || 0;
+    let statusVal = getVal(r, headers, 'status', 'Belum Lunas');
+    let statusLower = statusVal.toLowerCase().trim();
+    let tglBayar = getVal(r, headers, 'tanggal_bayar', '-');
+    let buktiUrl = getVal(r, headers, 'bukti_transfer', '');
+    let isLunas = statusLower === 'lunas' || (statusLower.includes('lunas') && !statusLower.includes('belum'));
+    let isMenunggu = statusLower.includes('menunggu') || statusLower.includes('verifikasi');
+    let badgeHtml = '';
+    
+    if (isLunas) {
+      badgeHtml = `
+        <div class="text-right">
+          <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold">LUNAS</span>
+          <span class="block text-[9px] text-gray-400 mt-0.5"><i class="bi bi-clock me-1"></i>${tglBayar}</span>
+        </div>`;
+    } else if (isMenunggu) {
+      if (isRT) {
+        badgeHtml = `
+          <div class="text-right flex flex-col items-end gap-1">
+            <span class="bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Menunggu Verifikasi</span>
+            ${buktiUrl && buktiUrl !== '-' ? `<button onclick="bukaPopUpFoto('${buktiUrl}')" class="text-[10px] text-blue-600 underline font-semibold">Cek Bukti Foto</button>` : ''}
+            <div class="flex items-center gap-1 mt-0.5">
+              <button onclick="verifikasiPembayaranRT('${rowId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow transition">ACC / Verifikasi Lunas</button>
+              <button onclick="bukaModalEditIuranRT('${rowId}')" title="Edit Tagihan" class="bg-amber-500 hover:bg-amber-600 text-white p-1 px-2 rounded-lg text-[10px] font-bold shadow transition flex items-center gap-1"><i class="bi bi-pencil-square"></i> Edit</button>
+              <button onclick="hapusIuranRT('${rowId}')" title="Hapus Tagihan" class="bg-rose-600 hover:bg-rose-700 text-white p-1 px-2 rounded-lg text-[10px] font-bold shadow transition flex items-center gap-1"><i class="bi bi-trash-fill"></i> Hapus</button>
+            </div>
+          </div>`;
+      } else {
+        badgeHtml = `
+          <div class="text-right">
+            <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[10px] font-bold">Menunggu Verifikasi</span>
+            ${buktiUrl && buktiUrl !== '-' ? `<span class="block text-[9px] text-blue-600 cursor-pointer mt-0.5 underline font-semibold" onclick="bukaPopUpFoto('${buktiUrl}')">Lihat Bukti Foto</span>` : ''}
+          </div>`;
+      }
+    } else {
+      if (isRT) {
+        badgeHtml = `
+          <div class="text-right flex flex-col items-end gap-1">
+            <span class="bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Belum Lunas</span>
+            <div class="flex items-center gap-1 mt-0.5">
+              <button onclick="verifikasiPembayaranRT('${rowId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow transition">+ Tandai Lunas</button>
+              <button onclick="bukaModalEditIuranRT('${rowId}')" title="Edit Tagihan" class="bg-amber-500 hover:bg-amber-600 text-white p-1 px-2 rounded-lg text-[10px] font-bold shadow transition flex items-center gap-1"><i class="bi bi-pencil-square"></i> Edit</button>
+              <button onclick="hapusIuranRT('${rowId}')" title="Hapus Tagihan" class="bg-rose-600 hover:bg-rose-700 text-white p-1 px-2 rounded-lg text-[10px] font-bold shadow transition flex items-center gap-1"><i class="bi bi-trash-fill"></i> Hapus</button>
+            </div>
+          </div>`;
+      } else {
+        badgeHtml = `<button onclick="bukaModalBayarIuran('${rowId}', '${bulanVal}', '${tahunVal}', '${nominalVal}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-[11px] font-bold shadow transition">Bayar</button>`;
+      }
+    }
+
+    let checkboxHtml = (!isLunas && !isMenunggu && !isRT)
+      ? `<input type="checkbox" class="iuran-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer me-2.5" data-id="${rowId}" data-nominal="${nominalVal}" data-label="${bulanVal} ${tahunVal}" onchange="updateSelectedIuranTotal()">`
+      : '';
+
+    container.innerHTML += `
+      <div class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-gray-100 transition">
+        <div class="flex items-center">
+          ${checkboxHtml}
+          <div>
+            <p class="font-bold text-gray-800 text-xs">${bulanVal} ${tahunVal} <span class="text-[10px] font-normal text-gray-500">(${namaVal})</span></p>
+            <p class="text-[10px] text-blue-600 font-semibold">Nominal: Rp ${nominalVal.toLocaleString('id-ID')}</p>
+          </div>
+        </div>
+        <div>${badgeHtml}</div>
+      </div>
+    `;
+  });
+}
+
+function calculateCRC16(str) {
+  let crc = 0xFFFF;
+  for (let c = 0; c < str.length; c++) {
+    crc ^= str.charCodeAt(c) << 8;
+    for (let i = 0; i < 8; i++) {
+      if (crc & 0x8000) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc = crc << 1;
+      }
+    }
+  }
+  let hex = (crc & 0xFFFF).toString(16).toUpperCase();
+  while (hex.length < 4) hex = '0' + hex;
+  return hex;
+}
+
+function generateDynamicQRIS(staticQris, nominal) {
+  let qris = staticQris.trim();
+  if (qris.includes('010211')) {
+    qris = qris.replace('010211', '010212');
+  }
+  if (qris.includes('6304')) {
+    qris = qris.split('6304')[0];
+  }
+  let amountStr = Math.round(nominal).toString();
+  let lenStr = amountStr.length < 10 ? '0' + amountStr.length : amountStr.length.toString();
+  let tag54 = '54' + lenStr + amountStr;
+  if (qris.includes('5802ID')) {
+    qris = qris.replace('5802ID', tag54 + '5802ID');
+  } else {
+    qris += tag54;
+  }
+  qris += '6304';
+  let crc = calculateCRC16(qris);
+  return qris + crc;
+}
+
+function bukaModalBayarSekaligusAll() {
+  let headers = (typeof iuranHeaders !== 'undefined' && iuranHeaders.length > 0) ? iuranHeaders : [];
+  let rows = (typeof rawIuranData !== 'undefined') ? rawIuranData : [];
+  let idIdx = headers.indexOf('id') > -1 ? headers.indexOf('id') : 0;
+  let nominalIdx = headers.indexOf('nominal');
+  let statusIdx = headers.indexOf('status');
+  let bulanIdx = headers.indexOf('bulan');
+  let tahunIdx = headers.indexOf('tahun');
+
+  let unpaidItems = [];
+  let totalNominal = 0;
+  let bulanList = [];
+
+  rows.forEach(r => {
+    let statusVal = statusIdx > -1 ? (r[statusIdx] || '') : 'Belum Lunas';
+    let statusLower = statusVal.toLowerCase().trim();
+    let isBelumBayar = statusLower.includes('belum') || (!statusLower.includes('lunas') && !statusLower.includes('menunggu') && !statusLower.includes('verifikasi'));
+    if (isBelumBayar) {
+      let rowId = r[idIdx] || '';
+      let nominalVal = nominalIdx > -1 ? (Number((r[nominalIdx] || 0).toString().replace(/[^0-9]/g, '')) || 0) : 0;
+      let bulan = bulanIdx > -1 ? r[bulanIdx] : '';
+      let tahun = tahunIdx > -1 ? r[tahunIdx] : '';
+      if (rowId) {
+        unpaidItems.push(rowId);
+        totalNominal += nominalVal;
+        if (bulan) bulanList.push(`${bulan} ${tahun}`);
+      }
+    }
+  });
+
+  if (unpaidItems.length === 0) {
+    alert('Seluruh tagihan iuran Anda sudah lunas!');
+    return;
+  }
+
+  let labelTarget = `Bayar Sekaligus (${unpaidItems.length} Bulan: ${bulanList.slice(0, 3).join(', ')}${bulanList.length > 3 ? '...' : ''})`;
+  bukaModalBayarIuran(unpaidItems.join(','), labelTarget, '', totalNominal);
+}
+
+function updateSelectedIuranTotal() {
+  let checkboxes = document.querySelectorAll('.iuran-checkbox:checked');
+  let totalNominal = 0;
+  let count = 0;
+  checkboxes.forEach(cb => {
+    count++;
+    totalNominal += Number(cb.getAttribute('data-nominal') || 0);
+  });
+  let bar = document.getElementById('selected-iuran-bar');
+  let text = document.getElementById('selected-iuran-text');
+  let nomEl = document.getElementById('selected-iuran-nominal');
+  if (bar) {
+    if (count > 0) {
+      bar.classList.remove('hidden');
+      if (text) text.innerText = `${count} Tagihan Terpilih`;
+      if (nomEl) nomEl.innerText = `Rp ${totalNominal.toLocaleString('id-ID')}`;
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+}
+
+function bukaModalBayarTerpilih() {
+  let checkboxes = document.querySelectorAll('.iuran-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('Pilih minimal 1 tagihan iuran yang ingin dibayar!');
+    return;
+  }
+  let selectedIds = [];
+  let totalNominal = 0;
+  let labels = [];
+  checkboxes.forEach(cb => {
+    selectedIds.push(cb.getAttribute('data-id'));
+    totalNominal += Number(cb.getAttribute('data-nominal') || 0);
+    labels.push(cb.getAttribute('data-label'));
+  });
+  let labelTarget = `Bayar Terpilih (${selectedIds.length} Tagihan: ${labels.join(', ')})`;
+  bukaModalBayarIuran(selectedIds.join(','), labelTarget, '', totalNominal);
+}
+
+function bukaModalBayarIuran(id, bulan, tahun, nominal) {
+  activeBayarId = id;
+  switchTabBayar('qris');
+  let infoEl = document.getElementById('info-bayar-target');
+  if (infoEl) {
+    let labelText = tahun ? `Iuran ${bulan} ${tahun} - Rp ${Number(nominal).toLocaleString('id-ID')}` : `${bulan} - Rp ${Number(nominal).toLocaleString('id-ID')}`;
+    infoEl.innerText = labelText;
+  }
+  let fileInp = document.getElementById('file-bukti-iuran');
+  if (fileInp) fileInp.value = '';
+  let baseStaticQris = (typeof appSettings !== 'undefined' && appSettings.payment_qris_string)
+    ? appSettings.payment_qris_string
+    : "00020101021126570011ID.DANA.WWW011893600915311093669202091109366920303UKE51440014ID.CO.QRIS.WWW0215ID10210624013640303UKE5204899953033605802ID5909SHN GROUP6010Kab. Bogor6105163206304BAFC"; 
+  let qrisDinamisString = generateDynamicQRIS(baseStaticQris, nominal);
+  let qrImgEl = document.getElementById('qris-dynamic-img');
+  if (qrImgEl) {
+    qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrisDinamisString)}`;
+  }
+  let merchantEl = document.getElementById('qris-merchant-name');
+  if (merchantEl) {
+    merchantEl.innerText = (typeof appSettings !== 'undefined' && appSettings.payment_qris_name) ? appSettings.payment_qris_name : 'SHN GROUP';
+  }
+  let tfBox = document.getElementById('content-tf');
+  if (tfBox) {
+    let rekList = [];
+    try { rekList = JSON.parse((typeof appSettings !== 'undefined' && appSettings.payment_rekening) || '[]'); } catch(e) {}
+    if (!Array.isArray(rekList) || rekList.length === 0) {
+      rekList = [
+        { bank: 'DANA', no: '08973366667', an: 'RIZKY NOVIANSYAH' },
+        { bank: 'BRI', no: '231313', an: 'RIZKY NOVIANSYAH' }
+      ];
+    }
+    let tfHtml = `<div class="bg-blue-50 p-3 rounded-xl border border-blue-100 space-y-1">`;
+    rekList.forEach(r => {
+      tfHtml += `<p class="text-gray-700 font-bold">${r.bank}: <span class="text-blue-700 font-mono">${r.no}</span> ${r.an ? `<small class="text-gray-500 font-normal">(a.n ${r.an})</small>` : ''}</p>`;
+    });
+    tfHtml += `</div>`;
+    tfBox.innerHTML = tfHtml;
+  }
+  let modal = document.getElementById('modal-bayar-iuran');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function tutupModalBayarIuran() {
+  let modal = document.getElementById('modal-bayar-iuran');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitBuktiIuran(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  return prosesKirimBuktiBayar();
+}
+
+async function prosesKirimBuktiBayar() {
+  if (!activeBayarId) {
+    alert('ID Tagihan iuran tidak ditemukan!');
+    return;
+  }
+  let fileInp = document.getElementById('file-bukti-iuran') || document.getElementById('iuran-bukti-file');
+  let file = fileInp && fileInp.files ? fileInp.files[0] : null;
+  if (!file) {
+    alert('Silakan pilih dan upload foto bukti transfer terlebih dahulu!');
+    return;
+  }
+  let btnSubmit = document.getElementById('btn-submit-iuran') || document.getElementById('btn-kirim-bukti');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = 'Mengunggah & Mengirim...';
+  }
+  try {
+    let compressedUrl = (typeof compressImageFile === 'function') ? await compressImageFile(file) : await new Promise(r => { let rd = new FileReader(); rd.onload = e => r(e.target.result); rd.readAsDataURL(file); });
+    let formData = {
+      status: 'Menunggu Verifikasi',
+      bukti_transfer: compressedUrl
+    };
+    let ids = String(activeBayarId).split(',');
+    let updatePromises = ids.map(idStr => {
+      return callGASPost('updateDataDiSheet', {
+        sheetName: 'Iuran',
+        id: idStr.trim(),
+        formData: formData
+      });
+    });
+    await Promise.all(updatePromises);
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = 'Kirim Bukti Pembayaran';
+    }
+    alert(`Bukti transfer berhasil dikirim untuk ${ids.length} tagihan! Status pembayaran kini Menunggu Verifikasi RT.`);
+    tutupModalBayarIuran();
+    if (typeof menuDataCache !== 'undefined') delete menuDataCache['Iuran'];
+    loadIuranView();
+  } catch (err) {
+    alert('Gagal membaca file foto: ' + err.message);
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = 'Kirim Bukti Pembayaran';
+    }
+  }
+}
+window.submitBuktiIuran = submitBuktiIuran;
+
+async function verifikasiPembayaranRT(id) {
+  showUIConfirm('Apakah Anda yakin ingin memverifikasi pembayaran iuran ini menjadi LUNAS?', async function() {
+    let nowFormatted = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    }) + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') + ' WIB';
+    let formData = {
+      status: 'LUNAS',
+      tanggal_bayar: nowFormatted,
+      diterima_oleh: 'Admin Pekuncen Digital (' + (session?.nama || 'Pengurus') + ')'
+    };
+    let res = await safeSupabaseUpdate('Iuran', formData, 'id', id);
+    if (res && (!res.error || res.status === 'success')) {
+      delete menuDataCache['Iuran'];
+      let idIdx = iuranHeaders.indexOf('id');
+      let iuranItem = rawIuranData.find(r => idIdx > -1 && String(r[idIdx]) === String(id));
+      let namaWarga = getVal(iuranItem || [], iuranHeaders, 'nama', 'Warga');
+      let bulan = getVal(iuranItem || [], iuranHeaders, 'bulan', 'Iuran');
+      let tahun = getVal(iuranItem || [], iuranHeaders, 'tahun', new Date().getFullYear());
+      let nominal = getVal(iuranItem || [], iuranHeaders, 'nominal', '25000');
+      let bukti = getVal(iuranItem || [], iuranHeaders, 'bukti_transfer', '-');
+      let nominalNum = Number(nominal.toString().replace(/[^0-9]/g, '')) || 0;
+      let kasItem = {
+        id: 'KAS-' + Date.now(),
+        tanggal: nowFormatted,
+        pemasukan: nominalNum,
+        pengeluaran: 0,
+        keterangan: `Pembayaran Iuran ${bulan} ${tahun} (${namaWarga})`,
+        saldo: 0,
+        foto_url: bukti || '-'
+      };
+      try {
+        await safeSupabaseInsert('Keuangan', [kasItem]);
+        delete menuDataCache['Keuangan'];
+      } catch (e) {
+        console.error('Gagal otomatis mencatat ke Keuangan:', e);
+      }
+      let modalEl = document.getElementById('formModal');
+      if (modalEl) {
+        let mInst = bootstrap.Modal.getInstance(modalEl);
+        if (mInst) mInst.hide();
+      }
+      showUIToast('Pembayaran iuran LUNAS & otomatis masuk Laporan Keuangan!', 'success');
+      loadMenu('Iuran');
+      fetchNotifikasi();
+    }
+  }, 'Verifikasi Iuran');
+}
+
+function bukaModalEditIuranRT(id) {
+  let idIdx = iuranHeaders.indexOf('id');
+  let iuranItem = rawIuranData.find(r => idIdx > -1 && String(r[idIdx]) === String(id));
+  if (!iuranItem) {
+    showUIToast('Data iuran tidak ditemukan!', 'error');
+    return;
+  }
+  let styleId = 'hide-modal-footer-override';
+  if (!document.getElementById(styleId)) {
+    let style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `#formModal .modal-footer { display: none !important; }`;
+    document.head.appendChild(style);
+  }
+  let nikVal = getVal(iuranItem, iuranHeaders, 'nik', '');
+  let namaVal = getVal(iuranItem, iuranHeaders, 'nama', '');
+  let bulanVal = getVal(iuranItem, iuranHeaders, 'bulan', 'Januari');
+  let tahunVal = getVal(iuranItem, iuranHeaders, 'tahun', new Date().getFullYear().toString());
+  let nominalVal = getVal(iuranItem, iuranHeaders, 'nominal', '25000');
+  let statusVal = getVal(iuranItem, iuranHeaders, 'status', 'Belum Lunas');
+  let months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  let bulanOpts = months.map(m => `<option value="${m}" ${m === bulanVal ? 'selected' : ''}>${m}</option>`).join('');
+  let currentYear = new Date().getFullYear();
+  let yearOptions = '';
+  for (let y = currentYear - 2; y <= currentYear + 3; y++) {
+    yearOptions += `<option value="${y}" ${String(y) === String(tahunVal) ? 'selected' : ''}>${y}</option>`;
+  }
+  let htmlForm = `
+    <div class="p-2 space-y-3 text-xs">
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nama Warga</label>
+        <input type="text" id="edit-iuran-nama" value="${namaVal}" class="w-full p-2 border rounded-xl bg-gray-50" readonly>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">NIK Warga</label>
+        <input type="text" id="edit-iuran-nik" value="${nikVal}" class="w-full p-2 border rounded-xl bg-gray-50" readonly>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Bulan Iuran</label>
+        <select id="edit-iuran-bulan" class="w-full p-2 border rounded-xl bg-white">
+          ${bulanOpts}
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
+        <select id="edit-iuran-tahun" class="w-full p-2 border rounded-xl bg-white">
+          ${yearOptions}
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan (Rp)</label>
+        <input type="number" id="edit-iuran-nominal" value="${nominalVal}" class="w-full p-2 border rounded-xl bg-white">
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Status Pembayaran</label>
+        <select id="edit-iuran-status" class="w-full p-2 border rounded-xl bg-white">
+          <option value="Belum Lunas" ${statusVal.toLowerCase().includes('belum') ? 'selected' : ''}>Belum Lunas</option>
+          <option value="Menunggu Verifikasi" ${statusVal.toLowerCase().includes('menunggu') ? 'selected' : ''}>Menunggu Verifikasi</option>
+          <option value="Lunas" ${statusVal.toLowerCase() === 'lunas' ? 'selected' : ''}>Lunas</option>
+        </select>
+      </div>
+      <div class="pt-2">
+        <button type="button" onclick="simpanEditIuranRT(event, '${id}')" class="w-full bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl font-bold shadow transition">Simpan Perubahan</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('formModalTitle').innerText = 'Edit Tagihan Iuran Warga';
+  document.getElementById('dynamicForm').innerHTML = htmlForm;
+  document.getElementById('btn-hapus-modal').style.display = 'none';
+  let modal = new bootstrap.Modal(document.getElementById('formModal'));
+  modal.show();
+}
+
+async function simpanEditIuranRT(event, id) {
+  if (event) event.preventDefault();
+  let updatePayload = {
+    bulan: document.getElementById('edit-iuran-bulan').value,
+    tahun: document.getElementById('edit-iuran-tahun').value,
+    nominal: document.getElementById('edit-iuran-nominal').value || '25000',
+    status: document.getElementById('edit-iuran-status').value
+  };
+  if (updatePayload.status.toUpperCase() === 'LUNAS') {
+    let nowFormatted = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    }) + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') + ' WIB';
+    updatePayload.tanggal_bayar = nowFormatted;
+    updatePayload.diterima_oleh = 'Admin Pekuncen Digital (' + (session?.nama || 'Pengurus') + ')';
+  }
+  let res = await safeSupabaseUpdate('Iuran', updatePayload, 'id', id);
+  if (res && (!res.error || res.status === 'success')) {
+    delete menuDataCache['Iuran'];
+    showUIToast('Tagihan iuran berhasil diperbarui!', 'success');
+    let modalEl = document.getElementById('formModal');
+    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    loadIuranView();
+  } else {
+    showUIToast('Gagal menyimpan: ' + ((res && res.error) ? res.error.message : 'Terjadi kesalahan'), 'error');
+  }
+}
+
+async function hapusIuranRT(id) {
+  showUIConfirm('Apakah Anda yakin ingin menghapus data tagihan iuran ini?', async function() {
+    let res = await safeSupabaseDelete('Iuran', 'id', id);
+    if (res && (!res.error || res.status === 'success')) {
+      delete menuDataCache['Iuran'];
+      showUIToast('Data tagihan iuran berhasil dihapus!', 'success');
+      loadIuranView();
+    } else {
+      showUIToast('Gagal menghapus: ' + ((res && res.error) ? res.error.message : 'Terjadi kesalahan'), 'error');
+    }
+  }, 'Hapus Tagihan Iuran');
+}
+
+async function bukaModalTambahIuranRT() {
+  let styleId = 'hide-modal-footer-override';
+  if (!document.getElementById(styleId)) {
+    let style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `#formModal .modal-footer { display: none !important; }`;
+    document.head.appendChild(style);
+  }
+  const res = await callGASGet('getDaftarWargaUntukIuran');
+  let wargaOptions = '<option value="">Pilih Warga...</option>';
+  if (res && res.status === 'success' && res.data) {
+    res.data.forEach(w => {
+      let wNik = (typeof cariNilaiKolom === 'function' ? cariNilaiKolom(w, ['nik', 'ktp']) : '') || w.nik || w.NIK || '';
+      let wNama = (typeof cariNilaiKolom === 'function' ? cariNilaiKolom(w, ['nama_lengkap', 'nama', 'name', 'nama_panggilan']) : '') || w.nama || w.Nama || '';
+      let wKk = (typeof cariNilaiKolom === 'function' ? cariNilaiKolom(w, ['no_kk', 'kk', 'nomor_kk']) : '') || w.no_kk || w.KK || '';
+      if (wNik || wNama) {
+        wargaOptions += `<option value="${wNik}" data-nama="${wNama}" data-kk="${wKk}">${wNama} (NIK: ${wNik})</option>`;
+      }
+    });
+  }
+  let currentYear = new Date().getFullYear();
+  let yearOptions = '';
+  for (let y = currentYear - 2; y <= currentYear + 3; y++) {
+    yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+  }
+  let htmlForm = `
+    <div class="p-2 space-y-3 text-xs">
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Pilih Warga</label>
+        <select id="iuran-pilih-warga" class="w-full p-2 border rounded-xl bg-white" onchange="isiOtomatisWarga(this)">
+          ${wargaOptions}
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">NIK Warga</label>
+        <input type="text" id="iuran-input-nik" class="w-full p-2 border rounded-xl bg-gray-50" readonly>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nama Warga</label>
+        <input type="text" id="iuran-input-nama" class="w-full p-2 border rounded-xl bg-gray-50" readonly>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nomor KK</label>
+        <input type="text" id="iuran-input-kk" class="w-full p-2 border rounded-xl bg-gray-50" readonly>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Bulan Iuran</label>
+        <select id="iuran-input-bulan" class="w-full p-2 border rounded-xl bg-white">
+          <option value="Januari">Januari</option><option value="Februari">Februari</option><option value="Maret">Maret</option>
+          <option value="April">April</option><option value="Mei">Mei</option><option value="Juni">Juni</option>
+          <option value="Juli">Juli</option><option value="Agustus">Agustus</option><option value="September">September</option>
+          <option value="Oktober">Oktober</option><option value="November">November</option><option value="Desember">Desember</option>
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
+        <select id="iuran-input-tahun" class="w-full p-2 border rounded-xl bg-white">
+          ${yearOptions}
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan (Rp)</label>
+        <input type="number" id="iuran-input-nominal" value="25000" class="w-full p-2 border rounded-xl bg-white">
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Status Pembayaran</label>
+        <select id="iuran-input-status" class="w-full p-2 border rounded-xl bg-white">
+          <option value="Belum Lunas">Belum Lunas</option>
+          <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+          <option value="Lunas">Lunas</option>
+        </select>
+      </div>
+      <button type="button" onclick="simpanIuranBaruRT(event)" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl font-bold shadow transition mt-2">Simpan Tagihan Iuran</button>
+    </div>
+  `;
+  document.getElementById('formModalTitle').innerText = 'Tambah Tagihan Iuran Warga';
+  document.getElementById('dynamicForm').innerHTML = htmlForm;
+  document.getElementById('btn-hapus-modal').style.display = 'none';
+  let modal = new bootstrap.Modal(document.getElementById('formModal'));
+  modal.show();
+}
+
+function isiOtomatisWarga(selectEl) {
+  let opt = selectEl.options[selectEl.selectedIndex];
+  let nik = opt.value || '';
+  let nama = opt.getAttribute('data-nama') || '';
+  let kk = opt.getAttribute('data-kk') || '';
+  if (nik === 'undefined') nik = '';
+  if (nama === 'undefined') nama = '';
+  if (kk === 'undefined') kk = '';
+  document.getElementById('iuran-input-nik').value = nik;
+  document.getElementById('iuran-input-nama').value = nama;
+  document.getElementById('iuran-input-kk').value = kk;
+}
+
+async function simpanIuranBaruRT(event) {
+  if (event) event.preventDefault();
+  let formData = {
+    nik: document.getElementById('iuran-input-nik').value,
+    nama: document.getElementById('iuran-input-nama').value,
+    no_kk: document.getElementById('iuran-input-kk').value,
+    bulan: document.getElementById('iuran-input-bulan').value,
+    tahun: document.getElementById('iuran-input-tahun').value,
+    nominal: document.getElementById('iuran-input-nominal').value || '25000',
+    status: document.getElementById('iuran-input-status').value,
+    tanggal_bayar: '-',
+    diterima_oleh: '-'
+  };
+  if(!formData.nik) {
+    alert('Silakan pilih warga terlebih dahulu!');
+    return;
+  }
+  if (formData.status.toUpperCase() === 'LUNAS') {
+    let nowFormatted = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    }) + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':') + ' WIB';
+    formData.tanggal_bayar = nowFormatted;
+    formData.diterima_oleh = 'Admin Pekuncen Digital (' + (session?.nama || 'Pengurus') + ')';
+    let kasItem = {
+      id: 'KAS-' + Date.now(),
+      tanggal: nowFormatted,
+      pemasukan: Number(formData.nominal) || 0,
+      pengeluaran: 0,
+      keterangan: `Pembayaran Iuran ${formData.bulan} ${formData.tahun} (${formData.nama})`,
+      saldo: 0,
+      foto_url: '-'
+    };
+    try {
+      await safeSupabaseInsert('Keuangan', [kasItem]);
+      delete menuDataCache['Keuangan'];
+    } catch (e) {}
+  }
+  const res = await callGASPost('simpanDataKeSheet', { sheetName: 'Iuran', formData: formData });
+  if (res && res.status === 'success') {
+    showUIToast('Tagihan iuran berhasil ditambahkan!', 'success');
+    let modalEl = document.getElementById('formModal');
+    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    if (typeof clearAppCache === 'function') clearAppCache();
+    loadIuranView();
+  } else {
+    showUIToast('Gagal menyimpan: ' + (res.message || 'Terjadi kesalahan'), 'error');
+  }
+}
+
+function switchTabBayar(type) {
+  let btnQris = document.getElementById('tab-qris-btn');
+  let btnTf = document.getElementById('tab-tf-btn');
+  let boxQris = document.getElementById('content-qris');
+  let boxTf = document.getElementById('content-tf');
+  if(type === 'qris') {
+    btnQris.className = "py-2 rounded-lg bg-white text-blue-600 shadow-sm transition font-bold";
+    btnTf.className = "py-2 rounded-lg text-gray-500 transition";
+    boxQris.classList.remove('hidden');
+    boxTf.classList.add('hidden');
+  } else {
+    btnTf.className = "py-2 rounded-lg bg-white text-blue-600 shadow-sm transition font-bold";
+    btnQris.className = "py-2 rounded-lg text-gray-500 transition";
+    boxTf.classList.remove('hidden');
+    boxQris.classList.add('hidden');
+  }
+}
+
+function kirimKonfirmasiWA() {
+  let pesan = `Halo Admin Pekuncen Digital, saya ${session?.nama || session?.nik || 'Warga'} ingin konfirmasi telah mengirimkan bukti pembayaran iuran bulanan warga.`;
+  window.open(`https://wa.me/${noWaAdmin}?text=${encodeURIComponent(pesan)}`, '_blank');
+}
+
+const originalLoadMenuIuran = window.loadMenu;
+window.loadMenu = async function(menu) {
+  if (menu === 'Iuran') {
+    currentActiveMenu = menu;
+    syncActiveNav(menu);
+    document.getElementById('page-title').innerText = 'Iuran Warga';
+    document.getElementById('rek-info').style.display = 'none';
+    await loadIuranView();
+  } else {
+    if (typeof originalLoadMenuIuran === 'function') originalLoadMenuIuran(menu);
+  }
+};

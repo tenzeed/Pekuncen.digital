@@ -1,0 +1,33 @@
+name: Supabase Keep-Alive (Pekuncen Digital)
+
+# Supabase gratis otomatis "tidur" (pause) kalau 7 hari tanpa aktivitas
+# database. Workflow ini nge-ping database ringan 2x seminggu (Senin &
+# Kamis) supaya project TIDAK PERNAH ke-pause, walau aplikasi RW ini
+# tidak dipakai setiap hari.
+#
+# CARA SETUP (sekali saja):
+# 1. Buka repo GitHub ini di browser -> Settings -> Secrets and variables
+#    -> Actions -> New repository secret.
+# 2. Tambahkan 2 secret:
+#      Nama: SUPABASE_URL       Nilai: https://xxxxxxxxx.supabase.co
+#      Nama: SUPABASE_ANON_KEY  Nilai: (anon public key dari Supabase)
+#    (Nilai yang sama dengan yang Anda isi di js/app.js)
+# 3. Selesai. Workflow otomatis jalan sesuai jadwal, tidak perlu
+#    disentuh lagi. Bisa dicek riwayatnya di tab "Actions" repo ini.
+
+on:
+  schedule:
+    # 03:00 UTC = 10:00 WIB, tiap Senin & Kamis
+    - cron: '0 3 * * 1,4'
+  workflow_dispatch: {} # Tombol "Run workflow" manual di tab Actions, buat tes
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase (baca 1 baris tabel Pengaturan)
+        run: |
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/Pengaturan?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
