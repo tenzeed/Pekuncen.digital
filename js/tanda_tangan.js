@@ -1,6 +1,6 @@
 // ============================================================
 // TANDA TANGAN PEMOHON - Inline Canvas Module
-// Developed by Rizky Noviansyah
+// Pekuncen Digital - RW 08 Blok Pekuncen
 // Untuk Menu Surat Pengantar RT
 // ============================================================
 

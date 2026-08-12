@@ -1,5 +1,5 @@
 // ============================================================
-// Developed by Rizky Noviansyah
+// Pekuncen Digital - RW 08 Blok Pekuncen
 // ============================================================
 let rawSuratData = [];
 let selectedSuratRow = null;

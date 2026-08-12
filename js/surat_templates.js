@@ -1,6 +1,6 @@
 // ============================================================
 // SURAT TEMPLATES - Template PDF per Jenis Surat - Pekuncen Digital RW 08
-// Developed by Rizky Noviansyah
+// Pekuncen Digital - RW 08 Blok Pekuncen
 // ============================================================
 const JENIS_SURAT_LIST = [
   { value: 'Surat Pengantar Umum',             kode: 'SP',         label: 'Surat Pengantar Umum' },

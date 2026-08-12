@@ -1,5 +1,5 @@
 // ============================================================
-// Developed by Rizky Noviansyah
+// Pekuncen Digital - RW 08 Blok Pekuncen
 // ============================================================
 const defaultInfoText = "Halo <b>{NAMA}</b>, selamat datang di Portal Layanan Modern Mandiri Pekuncen Digital. Melalui aplikasi ini kamu bisa memantau kas warga, membuat pengaduan masalah lingkungan secara real-time, mengajukan surat pengantar digital secara instan, serta memverifikasi data sumbangan dengan aman.";
 let infoWargaTimer = null;

@@ -13,7 +13,9 @@
 -- ============================================================
 
 -- Ekstensi untuk hashing password (bcrypt)
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Supabase secara default memasang extension di schema "extensions" (bukan
+-- "public"), makanya di bawah kita eksplisit arahkan ke sana.
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- ============================================================
 -- 1. Tabel Users (Akun Login Pengguna & Admin)
@@ -222,7 +224,7 @@ CREATE TABLE IF NOT EXISTS "Pengaturan" (
 -- Username: adminrw | Password: admin123  -> GANTI SEGERA setelah login pertama
 -- ============================================================
 INSERT INTO "Users" ("username", "password", "role", "nama", "nik")
-SELECT 'adminrw', crypt('admin123', gen_salt('bf')), 'RT', 'Administrator RW 08', '0'
+SELECT 'adminrw', extensions.crypt('admin123', extensions.gen_salt('bf')), 'RT', 'Administrator RW 08', '0'
 WHERE NOT EXISTS (SELECT 1 FROM "Users" WHERE "username" = 'adminrw');
 
 -- ============================================================
@@ -235,7 +237,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(p_username TEXT, p_password TEXT)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_user RECORD;
@@ -253,7 +255,7 @@ BEGIN
     RETURN json_build_object('status','error','message','Akun ini belum memiliki password. Hubungi Admin RW.');
   END IF;
 
-  IF crypt(p_password, v_user.password) <> v_user.password THEN
+  IF extensions.crypt(p_password, v_user.password) <> v_user.password THEN
     RETURN json_build_object('status','error','message','Username atau Password salah!');
   END IF;
 
@@ -287,7 +289,7 @@ CREATE OR REPLACE FUNCTION admin_set_password(p_username TEXT, p_new_password TE
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 BEGIN
   IF p_new_password IS NULL OR length(p_new_password) < 6 THEN
@@ -295,7 +297,7 @@ BEGIN
   END IF;
 
   UPDATE "Users"
-    SET password = crypt(p_new_password, gen_salt('bf'))
+    SET password = extensions.crypt(p_new_password, extensions.gen_salt('bf'))
     WHERE lower(trim(username)) = lower(trim(p_username));
 
   IF NOT FOUND THEN
