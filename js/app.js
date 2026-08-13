@@ -388,6 +388,7 @@ async function callGASPost(actionName, extraPayload = {}) {
       if (!uClean || !pClean) {
         return { status: 'error', message: 'Username dan Password tidak boleh kosong!' };
       }
+      let debugDetail = null;
       try {
         const { data, error } = await db.rpc('verify_user_login', {
           p_username: uClean,
@@ -395,14 +396,16 @@ async function callGASPost(actionName, extraPayload = {}) {
         });
         if (!error && data) return data;
         console.warn('[Login] RPC error:', error);
+        debugDetail = error;
       } catch (err) {
         console.warn('[Login] RPC tidak terpanggil:', err);
+        debugDetail = { caught_exception: String(err && err.message || err) };
       }
       // CATATAN: fallback lama yang membaca seluruh tabel Users (termasuk
       // password) langsung ke browser sudah DIHAPUS untuk keamanan.
       // Kalau baris ini tercapai, artinya RPC verify_user_login belum
       // ter-install di database -> jalankan schema.sql di Supabase project.
-      return { status: 'error', message: 'Gagal terhubung ke sistem login. Pastikan schema.sql sudah dijalankan di Supabase, atau hubungi Admin RW.' };
+      return { status: 'error', message: 'Gagal terhubung ke sistem login. Pastikan schema.sql sudah dijalankan di Supabase, atau hubungi Admin RW.', _debug: debugDetail };
     }
     if (actionName === 'simpanDataKeSheet') {
       const sheetName = extraPayload.sheetName;
@@ -1199,7 +1202,21 @@ async function doLogin(e) {
       await saveSessionToDatabase(sessionToken, session.nik, session.role);
       applySessionUI();
     } else {
-      if (msgEl) msgEl.innerHTML = res ? res.message : 'Login gagal!';
+      if (msgEl) {
+        msgEl.innerHTML = res ? res.message : 'Login gagal!';
+        // DEBUG SEMENTARA: tampilkan detail mentah respons RPC di
+        // halaman ini, supaya bisa di-screenshot tanpa buka DevTools.
+        try {
+          let debugBox = document.getElementById('login-debug-box');
+          if (!debugBox) {
+            debugBox = document.createElement('pre');
+            debugBox.id = 'login-debug-box';
+            debugBox.style.cssText = 'margin-top:10px; padding:8px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:10px; text-align:left; white-space:pre-wrap; word-break:break-all; color:#000;';
+            msgEl.parentNode.insertBefore(debugBox, msgEl.nextSibling);
+          }
+          debugBox.innerText = 'DEBUG (hapus nanti):\n' + JSON.stringify(res, null, 2);
+        } catch(e) {}
+      }
       else alert(res ? res.message : 'Login gagal!');
     }
   } catch (error) {
