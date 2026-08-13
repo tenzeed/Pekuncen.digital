@@ -158,7 +158,7 @@ const DEFAULT_LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 const _k1 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 const _k2 = '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbXhzZ2lpc3FnbXZ0dW9ta2pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MTY3NjMsImV4cCI6MjEwMTM5Mjc2M30';
 const _k3 = '.5oTxN3qZNdpks__10qIa7oWx2LsV7Vqr_E40V8OTqb8';
-const SUPABASE_URL = 'https://pemxsgiisqgmvtuomkjq.supabase.co';
+const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co';
 const SUPABASE_KEY = _k1 + _k2 + _k3;
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function safeSupabaseSelect(tableName) {
