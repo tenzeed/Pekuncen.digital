@@ -140,7 +140,7 @@ async function submitAspirasi(e) {
     isi_aspirasi: isi,
     status: 'Baru',
     nama: namaPengirim,
-    rt: session.rt || null
+    rt: sanitizeRT(session.rt)
   };
   const res = await callGASPost('simpanDataKeSheet', {
     sheetName: 'Aspirasi',
