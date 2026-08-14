@@ -166,8 +166,8 @@ const DEFAULT_LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 // aplikasi tidak akan bisa terhubung ke database Anda kalau ini
 // belum diganti.
 // ============================================================
-const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co'; // contoh: https://xxxxxxxxx.supabase.co
-const SUPABASE_KEY = 'GeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpandiZ3F4b2t5eWlvZGVoZXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTI1MjgsImV4cCI6MjEwMjA4ODUyOH0.SE5PjvYG5sWXi9qgjPwWk7vyjSsF4OMiSy4xweLlmUM';
+const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co'; // contoh: https://tijwbgqxokyyiodehepa.supabase.co
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpandiZ3F4b2t5eWlvZGVoZXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTI1MjgsImV4cCI6MjEwMjA4ODUyOH0.SE5PjvYG5sWXi9qgjPwWk7vyjSsF4OMiSy4xweLlmUM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function safeSupabaseSelect(tableName) {
   try {
@@ -214,25 +214,33 @@ async function safeSupabaseInsert(tableName, rows) {
 function sanitizeFormData(sheetName, formData) {
   if (!formData || typeof formData !== 'object') return formData;
   let cleanData = { ...formData };
+  const NUMERIC_FIELDS = ['nominal', 'tahun', 'jumlah', 'stok', 'pemasukan', 'pengeluaran', 'saldo', 'jumlah_minta'];
   for (let k in cleanData) {
     if (typeof cleanData[k] === 'object' && cleanData[k] !== null && cleanData[k].base64) {
       cleanData[k] = cleanData[k].base64;
     }
     let kLower = k.toLowerCase();
+    if (kLower === 'rt') {
+      cleanData[k] = sanitizeRT(cleanData[k]);
+      continue;
+    }
     let valStr = String(cleanData[k] !== null && cleanData[k] !== undefined ? cleanData[k] : '').trim();
     if (valStr === '') {
       if (['no_hp', 'hp', 'telp', 'wa', 'acc'].includes(kLower)) {
         cleanData[k] = null;
-      } else if (['nominal', 'tahun', 'rt', 'jumlah', 'stok'].includes(kLower)) {
+      } else if (NUMERIC_FIELDS.includes(kLower)) {
         cleanData[k] = 0;
       }
-    } else if (['nik', 'no_hp', 'no_kk', 'nominal', 'tahun', 'rt', 'acc', 'jumlah', 'stok'].includes(kLower)) {
+    } else if (['nik', 'no_hp', 'no_kk', 'acc'].includes(kLower)) {
       let numOnly = valStr.replace(/[^0-9]/g, '');
       if (numOnly) {
         cleanData[k] = numOnly;
       } else if (['no_hp', 'acc'].includes(kLower)) {
         cleanData[k] = null;
       }
+    } else if (NUMERIC_FIELDS.includes(kLower)) {
+      let numOnly = valStr.replace(/[^0-9.-]/g, '');
+      cleanData[k] = numOnly !== '' ? numOnly : 0;
     }
   }
   return cleanData;
@@ -425,18 +433,23 @@ async function callGASPost(actionName, extraPayload = {}) {
       let formData = { ...extraPayload.formData };
       if (!formData.id) formData.id = sheetName.substring(0,3).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
       if (session.role !== 'RT' && sheetName !== 'Iuran' && sheetName !== 'Aspirasi') formData['nik'] = session.nik;
+      const NUMERIC_FIELDS_INSERT = ['nominal', 'tahun', 'jumlah', 'stok', 'pemasukan', 'pengeluaran', 'saldo', 'jumlah_minta'];
       for (let k in formData) {
         if (typeof formData[k] === 'object' && formData[k] !== null && formData[k].base64) formData[k] = formData[k].base64;
         let kLower = k.toLowerCase();
+        if (kLower === 'rt') { formData[k] = sanitizeRT(formData[k]); continue; }
         let valStr = String(formData[k] || '').trim();
         if (valStr === '') {
           if (['no_hp', 'hp', 'telp', 'wa', 'acc'].includes(kLower)) formData[k] = null;
           else if (['nik', 'no_kk'].includes(kLower)) formData[k] = Math.floor(1000000000000000 + Math.random() * 9000000000000000);
-          else if (['nominal', 'tahun', 'rt', 'jumlah', 'stok'].includes(kLower)) formData[k] = 0;
-        } else if (['nik', 'no_hp', 'no_kk', 'nominal', 'tahun', 'rt', 'acc', 'jumlah', 'stok'].includes(kLower)) {
+          else if (NUMERIC_FIELDS_INSERT.includes(kLower)) formData[k] = 0;
+        } else if (['nik', 'no_hp', 'no_kk', 'acc'].includes(kLower)) {
           let numOnly = valStr.replace(/[^0-9]/g, '');
           if (numOnly) formData[k] = numOnly;
           else if (['no_hp', 'acc'].includes(kLower)) formData[k] = null;
+        } else if (NUMERIC_FIELDS_INSERT.includes(kLower)) {
+          let numOnly = valStr.replace(/[^0-9.-]/g, '');
+          formData[k] = numOnly !== '' ? numOnly : 0;
         }
       }
       const { error } = await safeSupabaseInsert(sheetName, [formData]);
@@ -1259,6 +1272,7 @@ function applySessionUI() {
         el.style.display = 'block';
       }
     });
+    document.querySelectorAll('.warga-only').forEach(el => el.style.display = 'none');
   }
   loadMenu('Dashboard');
   requestNotifPermission();
@@ -2313,6 +2327,10 @@ async function simpanUserBaru(e) {
     alert('Username dan Password wajib diisi!');
     return;
   }
+  if (role === 'Warga' && !nik) {
+    alert('Pilih NIK Warga dari daftar Data Warga! Kalau warganya belum ada di daftar, tambahkan dulu lewat menu Data Warga.');
+    return;
+  }
   if (role === 'Warga' && !rt) {
     alert('Pilih RT untuk akun warga ini!');
     return;
@@ -2552,6 +2570,11 @@ async function renderPengaturanRTView() {
   try {
     const { data: sessData } = await safeSupabaseSelect('Sessions');
     sessionsList = sessData || [];
+  } catch(e) {}
+  let wargaListForReg = [];
+  try {
+    const { data: wargaData } = await safeSupabaseSelect('Warga');
+    wargaListForReg = wargaData || [];
   } catch(e) {}
   let currentRek = [];
   try { currentRek = JSON.parse(appSettings.payment_rekening || '[]'); } catch(e) {}
@@ -2821,8 +2844,17 @@ async function renderPengaturanRTView() {
                   <input type="text" id="reg-username" class="form-control form-control-sm" placeholder="Username / NIK Warga" required>
                 </div>
                 <div class="col-md-3">
-                  <label class="form-label text-[10px] font-bold text-muted uppercase">NIK Warga (Opsional)</label>
-                  <input type="text" id="reg-nik" class="form-control form-control-sm" placeholder="Sesuai KTP Warga">
+                  <label class="form-label text-[10px] font-bold text-muted uppercase">NIK Warga <span class="text-danger">*</span></label>
+                  <select id="reg-nik" class="form-select form-select-sm" onchange="let rtOpt=this.options[this.selectedIndex].getAttribute('data-rt'); let rtEl=document.getElementById('reg-rt'); if(rtOpt && rtEl) rtEl.value = rtOpt;">
+                    <option value="">-- Pilih dari Data Warga --</option>
+                    ${wargaListForReg.map(w => {
+                      let wNik = cariNilaiKolom(w, ['nik', 'ktp']);
+                      let wNama = cariNilaiKolom(w, ['nama_lengkap', 'nama']);
+                      let wRt = cariNilaiKolom(w, ['rt']);
+                      return wNik ? `<option value="${wNik}" data-rt="${wRt || ''}">${wNama || '(tanpa nama)'} — ${wNik}</option>` : '';
+                    }).join('')}
+                  </select>
+                  <small class="text-muted text-[10px]">Wajib pilih warga yang sudah ada di Data Warga, supaya menu "Profil Saya" miliknya bisa terbaca. Belum ada di daftar? Tambahkan dulu lewat menu Data Warga.</small>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label text-[10px] font-bold text-muted uppercase">Password</label>
