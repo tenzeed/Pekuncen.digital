@@ -25,7 +25,7 @@ function renderAsetCustom(data) {
       </div>
       <div class="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 flex gap-2">
         <button id="tab-btn-stok" onclick="switchAsetTab('stok')" class="flex-1 py-2 px-3 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 ${currentAsetTab === 'stok' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}">
-          <span>📦</span> Daftar Barang Aset RT
+          <span>📦</span> Daftar Barang Aset RW
         </button>
         <button id="tab-btn-riwayat" onclick="switchAsetTab('riwayat')" class="flex-1 py-2 px-3 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 ${currentAsetTab === 'riwayat' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}">
           <span>📋</span> Riwayat Peminjaman Warga
@@ -33,7 +33,7 @@ function renderAsetCustom(data) {
       </div>
       <div id="tab-content-stok" class="${currentAsetTab === 'stok' ? 'block' : 'hidden'} bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 p-4">
         <div class="flex justify-between items-center mb-3">
-          <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wide">📦 Stok Barang Aset RT</h3>
+          <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wide">📦 Stok Barang Aset RW</h3>
           ${isRt ? `
           <select id="filter-rt-aset" onchange="filterDataAset()" class="p-1.5 border rounded-lg text-xs bg-white shadow-sm">
             <option value="">Semua</option>
@@ -74,9 +74,9 @@ function renderAsetCustom(data) {
                 <th class="p-3">NAMA PEMINJAM</th>
                 <th class="p-3">BARANG</th>
                 <th class="p-3 text-center">MINTA</th>
-                <th class="p-3 text-center">ACC RT</th>
+                <th class="p-3 text-center">ACC ADMIN</th>
                 <th class="p-3">KET. WARGA</th>
-                <th class="p-3">CATATAN / LOKASI RT</th>
+                <th class="p-3">CATATAN / LOKASI</th>
                 <th class="p-3 text-center">STATUS</th>
                 <th class="p-3 text-center">AKSI RT</th>
               </tr>
@@ -94,7 +94,7 @@ function renderAsetCustom(data) {
         <button onclick="tutupModalKelolaAset()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">&times;</button>
         <div class="mb-4 border-b pb-2">
           <h3 class="font-bold text-gray-800 text-sm" id="modalKelolaTitle">Kelola Barang Aset</h3>
-          <p class="text-[11px] text-gray-500">Tambah barang baru atau perbarui stok inventaris RT</p>
+          <p class="text-[11px] text-gray-500">Tambah barang baru atau perbarui stok inventaris RW</p>
         </div>
         <form id="formKelolaAset" onsubmit="submitKelolaAset(event)" class="space-y-3">
           <input type="hidden" id="editAsetId" value="">
@@ -137,7 +137,7 @@ function renderAsetCustom(data) {
         <button onclick="tutupModalPinjam()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">&times;</button>
         <div class="mb-4 border-b pb-2">
           <h3 class="font-bold text-gray-800 text-sm">Form Peminjaman Barang</h3>
-          <p class="text-[11px] text-gray-500">Isi detail pengajuan peminjaman fasilitas/aset RT</p>
+          <p class="text-[11px] text-gray-500">Isi detail pengajuan peminjaman fasilitas/aset RW</p>
         </div>
         <form id="formPinjamAset" onsubmit="submitFormPinjam(event)" class="space-y-3">
           <div>
@@ -173,7 +173,7 @@ function renderAsetCustom(data) {
       <div class="bg-white p-5 rounded-2xl w-full max-w-md shadow-2xl relative">
         <button onclick="tutupModalVerifikasiRT()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">&times;</button>
         <div class="mb-4 border-b pb-2">
-          <h3 class="font-bold text-gray-800 text-sm">Verifikasi Peminjaman (RT)</h3>
+          <h3 class="font-bold text-gray-800 text-sm">Verifikasi Peminjaman (Admin RW)</h3>
           <p class="text-[11px] text-gray-500">Proses persetujuan peminjaman warga</p>
         </div>
         <div class="space-y-3">
@@ -183,11 +183,11 @@ function renderAsetCustom(data) {
             <p><b>Jumlah Diminta:</b> <span id="verifJumlahMinta" class="font-bold text-blue-600">-</span></p>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">JUMLAH YANG DI-ACC RT</label>
+            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">JUMLAH YANG DI-ACC ADMIN</label>
             <input type="number" id="verifJumlahAcc" min="1" class="w-full p-2 border border-gray-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">CATATAN RT / LOKASI PENGAMBILAN BARANG</label>
+            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">CATATAN ADMIN / LOKASI PENGAMBILAN BARANG</label>
             <textarea id="verifCatatanRt" rows="3" class="w-full p-2 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Ambil di gudang RT samping posyandu jam 4 sore..."></textarea>
           </div>
           <div class="flex justify-end gap-2 pt-2 border-t">
@@ -216,7 +216,7 @@ function renderAsetCustom(data) {
             <input type="number" id="kembaliJumlahBalik" min="0" class="w-full p-2 border border-gray-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">CATATAN RT / KONDISI BARANG</label>
+            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">CATATAN ADMIN / KONDISI BARANG</label>
             <textarea id="kembaliCatatanRt" rows="2" class="w-full p-2 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Dikembalikan kondisi bersih & lengkap..."></textarea>
           </div>
           <div class="flex justify-end gap-2 pt-2 border-t">

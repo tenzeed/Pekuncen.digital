@@ -136,6 +136,7 @@ function filterDataWarga() {
   let namaIdx = headers.findIndex(h => h.includes('nama') || h.includes('name'));
   if (namaIdx === -1) namaIdx = headers.length > 1 ? 1 : 0;
   let alamatIdx = headers.findIndex(h => h.includes('alamat') || h.includes('address'));
+  let kkIdxGroup = headers.findIndex(h => h === 'no_kk' || h.includes('no_kk') || h === 'kk');
   let hpIdx = headers.findIndex(h => h.includes('hp') || h.includes('wa') || h.includes('telp'));
   let statusTinggalIdx = headers.findIndex(h => h.includes('status_tinggal') || h.includes('status_huni') || h.includes('status_pindah'));
   let rtIdx = headers.indexOf('rt');
@@ -167,7 +168,10 @@ function filterDataWarga() {
   filtered.forEach(row => {
     let alamatVal = (alamatIdx > -1 && row[alamatIdx]) ? String(row[alamatIdx]).trim() : '';
     if (!alamatVal || alamatVal === '-') alamatVal = 'Alamat Belum Terdata';
-    let key = alamatVal.toLowerCase().replace(/\s+/g, ' ');
+    let kkVal = (kkIdxGroup > -1 && row[kkIdxGroup]) ? String(row[kkIdxGroup]).trim() : '';
+    // Kelompokkan berdasarkan No. KK (lebih akurat, tidak rawan typo alamat).
+    // Kalau KK kosong, baru fallback ke alamat supaya data lama tetap terkelompok.
+    let key = kkVal ? ('kk:' + kkVal) : ('alamat:' + alamatVal.toLowerCase().replace(/\s+/g, ' '));
     if (!groupedRumahCache[key]) {
       groupedRumahCache[key] = {
         alamatNama: alamatVal,

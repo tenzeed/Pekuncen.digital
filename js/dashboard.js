@@ -117,6 +117,12 @@ async function fetchFreshDashboardData() {
 }
 function renderDashboardLayout(res) {
   let htmlLayout = '';
+  const RT_THEME = {
+    '29': { accent: '#2563eb', soft: '#eff6ff', text: '#1d4ed8' },
+    '30': { accent: '#0891b2', soft: '#ecfeff', text: '#0e7490' },
+    '31': { accent: '#d97706', soft: '#fffbeb', text: '#b45309' },
+    '32': { accent: '#e11d48', soft: '#fff1f2', text: '#be123c' }
+  };
 
   if (res.role === 'RT') {
     let perRTCards = '';
@@ -124,17 +130,41 @@ function renderDashboardLayout(res) {
       ['29','30','31','32'].forEach(rt => {
         let d = res.perRT[rt] || { warga: 0, saldo: 0 };
         let saldoText = 'Rp ' + (d.saldo || 0).toLocaleString('id-ID');
+        let th = RT_THEME[rt];
         perRTCards += `
           <div class="col-6 col-md-3">
-            <div class="card card-custom h-100 text-center py-3">
-              <div class="fw-bold text-primary" style="font-size:0.95rem;"><i class="bi bi-signpost-split-fill me-1"></i>RT ${rt}</div>
-              <div class="text-muted text-xs mt-1">${d.warga} Warga</div>
-              <div class="fw-bold text-success text-xs mt-1">${saldoText}</div>
+            <div class="rt-summary-card" style="border-top: 3px solid ${th.accent};" onclick="loadMenu('Warga')">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="rt-summary-icon" style="background:${th.soft}; color:${th.accent};">
+                  <i class="bi bi-houses-fill"></i>
+                </div>
+                <div>
+                  <div class="rt-summary-label">BLOK PEKUNCEN</div>
+                  <div class="rt-summary-title" style="color:${th.text};">RT ${rt}</div>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center rt-summary-row">
+                <span class="text-muted"><i class="bi bi-people-fill me-1"></i>Warga</span>
+                <span class="fw-bold text-gray-800">${d.warga}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center rt-summary-row">
+                <span class="text-muted"><i class="bi bi-wallet2 me-1"></i>Kas</span>
+                <span class="fw-bold" style="color:${d.saldo >= 0 ? '#059669' : '#dc2626'};">${saldoText}</span>
+              </div>
             </div>
           </div>`;
       });
     }
     htmlLayout = `
+      <style>
+        .rt-summary-card { background:#fff; border-radius:16px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid #f1f1f4; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; height:100%; }
+        .rt-summary-card:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.08); }
+        .rt-summary-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+        .rt-summary-label { font-size:9px; font-weight:700; letter-spacing:0.04em; color:#9ca3af; }
+        .rt-summary-title { font-size:1.05rem; font-weight:800; line-height:1.1; }
+        .rt-summary-row { font-size:11px; padding:3px 0; border-top:1px dashed #eef0f3; }
+        .rt-summary-row:first-of-type { border-top:none; }
+      </style>
       <p class="fw-bold text-secondary mb-2" style="font-size:0.85rem;"><i class="bi bi-diagram-3-fill me-1"></i> Ringkasan per RT — Blok Pekuncen</p>
       <div class="row g-3 mb-4">${perRTCards}</div>
       <div class="row text-center d-none d-md-flex g-4 mb-4">
@@ -158,12 +188,12 @@ function renderDashboardLayout(res) {
           <div class="quick-action-item" onclick="loadMenu('Pengaturan')"><div class="quick-action-icon"><i class="bi bi-gear-fill text-primary"></i></div>Pengaturan</div>
           <div class="quick-action-item" onclick="loadMenu('Profil')"><div class="quick-action-icon"><i class="bi bi-person-vcard text-primary"></i></div>Profil Saya</div>
         </div>
-        <p class="fw-bold text-secondary mb-2" style="font-size:0.85rem;"><i class="bi bi-graph-up me-1"></i> Rekap Ringkasan RT</p>
+        <p class="fw-bold text-secondary mb-2" style="font-size:0.85rem;"><i class="bi bi-graph-up me-1"></i> Rekap Ringkasan RW</p>
         <div class="mobile-stats-grid">
           <div class="m-stat-card blue-card"><span class="m-stat-title">Total Warga</span><span class="m-stat-value">${res.warga || 0} Orang</span></div>
           <div class="m-stat-card teal-card"><span class="m-stat-title">Transaksi Beres</span><span class="m-stat-value">${res.keuangan || 0} Data</span></div>
           <div class="m-stat-card orange-card"><span class="m-stat-title">Aduan Masuk</span><span class="m-stat-value">${res.aduan || 0} Kasus</span></div>
-          <div class="m-stat-card slate-card"><span class="m-stat-title">Status Sistem</span><span class="m-stat-value">Aktif RT</span></div>
+          <div class="m-stat-card slate-card"><span class="m-stat-title">Status Sistem</span><span class="m-stat-value">Aktif</span></div>
         </div>
       </div>
     `;

@@ -166,8 +166,8 @@ const DEFAULT_LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 // aplikasi tidak akan bisa terhubung ke database Anda kalau ini
 // belum diganti.
 // ============================================================
-const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co'; // contoh: https://tijwbgqxokyyiodehepa.supabase.co
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpandiZ3F4b2t5eWlvZGVoZXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTI1MjgsImV4cCI6MjEwMjA4ODUyOH0.SE5PjvYG5sWXi9qgjPwWk7vyjSsF4OMiSy4xweLlmUM';
+const SUPABASE_URL = 'GANTI_DENGAN_URL_SUPABASE_ANDA'; // contoh: https://xxxxxxxxx.supabase.co
+const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY_SUPABASE_ANDA';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function safeSupabaseSelect(tableName) {
   try {
@@ -694,15 +694,15 @@ async function callGASGet(actionName, params = {}) {
       return { status: 'success', data: sortedRiwayat };
     }
 const FALLBACK_HEADERS = {
-  'Warga': ['id', 'nama_lengkap', 'nama_panggilan', 'nik', 'no_kk', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'status_nikah', 'status_tinggal', 'pekerjaan', 'no_hp', 'foto_url'],
-  'Iuran': ['id', 'nik', 'nama', 'no_kk', 'bulan', 'tahun', 'nominal', 'status', 'tanggal_bayar', 'diterima_oleh', 'bukti_transfer'],
-  'Pengaduan': ['id', 'nama', 'nik', 'no_hp', 'jenis_aduan', 'keterangan', 'tanggal', 'foto_url', 'status', 'foto_penyelesaian'],
-  'SuratPengantar': ['id', 'nama', 'nik', 'alamat', 'rt', 'jenis_surat', 'keterangan', 'status', 'keterangan_admin'],
-  'Keuangan': ['id', 'tanggal', 'pemasukan', 'pengeluaran', 'keterangan', 'saldo', 'foto_url'],
-  'Sumbangan': ['id', 'nama', 'tanggal', 'jenis_sumbangan', 'keterangan', 'nominal', 'bukti_transfer', 'status', 'nik'],
-  'Aset': ['id', 'nama_barang', 'kondisi', 'jumlah', 'status_barang'],
-  'Peminjaman': ['id', 'nama_peminjam', 'id_barang', 'nama_barang', 'jumlah_minta', 'acc', 'keterangan', 'catatan_rt', 'status', 'tanggal', 'nik', 'jumlah'],
-  'Aspirasi': ['id', 'tanggal', 'isi_aspirasi', 'status', 'nama'],
+  'Warga': ['id', 'nama_lengkap', 'nama_panggilan', 'nik', 'no_kk', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'status_nikah', 'status_tinggal', 'pekerjaan', 'no_hp', 'foto_url', 'rt'],
+  'Iuran': ['id', 'nik', 'nama', 'no_kk', 'bulan', 'tahun', 'nominal', 'status', 'tanggal_bayar', 'diterima_oleh', 'bukti_transfer', 'rt'],
+  'Pengaduan': ['id', 'nama', 'nik', 'no_hp', 'jenis_aduan', 'keterangan', 'tanggal', 'foto_url', 'status', 'foto_penyelesaian', 'rt'],
+  'SuratPengantar': ['id', 'nama', 'nik', 'alamat', 'rt', 'rw', 'jenis_surat', 'keterangan', 'ttd_pemohon', 'status', 'keterangan_admin'],
+  'Keuangan': ['id', 'tanggal', 'pemasukan', 'pengeluaran', 'keterangan', 'saldo', 'foto_url', 'rt'],
+  'Sumbangan': ['id', 'nama', 'tanggal', 'jenis_sumbangan', 'keterangan', 'nominal', 'bukti_transfer', 'status', 'nik', 'rt'],
+  'Aset': ['id', 'nama_barang', 'kondisi', 'jumlah', 'status_barang', 'rt'],
+  'Peminjaman': ['id', 'nama_peminjam', 'id_barang', 'nama_barang', 'jumlah_minta', 'acc', 'keterangan', 'catatan_rt', 'status', 'tanggal', 'nik', 'jumlah', 'rt'],
+  'Aspirasi': ['id', 'tanggal', 'isi_aspirasi', 'status', 'nama', 'rt'],
   'Kelahiran': ['id', 'nama_bayi', 'tanggal_lahir', 'nama_ayah', 'nama_ibu', 'alamat', 'rt'],
   'Kematian': ['id', 'nama', 'nik', 'no_kk', 'tanggal_meninggal', 'rt', 'alamat', 'keterangan'],
   'PindahMasuk': ['id', 'nama', 'nik', 'no_kk', 'asal', 'alamat_baru', 'rt', 'tanggal_pindah', 'status_pindah'],
@@ -2549,7 +2549,7 @@ function simpanTtdCanvas(type) {
 }
 async function renderPengaturanRTView() {
   if (session.role !== 'RT') return;
-  document.getElementById('page-title').innerText = 'Pengaturan RT & Sistem';
+  document.getElementById('page-title').innerText = 'Pengaturan RW & Sistem';
   document.getElementById('main-content').innerHTML = `
     <div class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>

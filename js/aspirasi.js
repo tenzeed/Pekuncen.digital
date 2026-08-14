@@ -18,7 +18,7 @@ function renderAspirasiView(data) {
       </div>
       <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 p-4">
         <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-          <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wide">💬 Daftar Aspirasi Masuk ${isRt ? '(Khusus RT: Nama Pengirim Terlihat)' : '(100% Rahasia & Anonim Untuk Warga)'}</h3>
+          <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wide">💬 Daftar Aspirasi Masuk ${isRt ? '(Khusus Admin RW: Nama Pengirim Terlihat)' : '(100% Rahasia & Anonim Untuk Warga)'}</h3>
           <div class="d-flex align-items-center gap-2">
             ${isRt ? `
             <select id="filter-rt-aspirasi" onchange="currentAspirasiRTFilter=this.value.trim(); loadMenu('Aspirasi');" class="form-select form-select-sm text-xs" style="max-width:130px;">
@@ -39,7 +39,7 @@ function renderAspirasiView(data) {
                 <th class="p-3 text-center">NO</th>
                 <th class="p-3">TANGGAL</th>
                 ${isRt ? '<th class="p-3">RT</th>' : ''}
-                ${isRt ? '<th class="p-3 text-blue-600 font-bold">PENGIRIM (KHUSUS RT)</th>' : ''}
+                ${isRt ? '<th class="p-3 text-blue-600 font-bold">PENGIRIM (KHUSUS ADMIN)</th>' : ''}
                 <th class="p-3">ISI ASPIRASI / MASUKAN</th>
                 <th class="p-3 text-center">STATUS</th>
                 ${isRt ? '<th class="p-3 text-center">AKSI</th>' : ''}

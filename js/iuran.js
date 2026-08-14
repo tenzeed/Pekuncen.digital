@@ -59,7 +59,10 @@ function renderIuranCustom(data) {
       </div>
       <!-- Tombol Tambah Khusus RT -->
       ${isRT ? `
-        <div class="mb-4 flex justify-end">
+        <div class="mb-4 flex justify-end gap-2 flex-wrap">
+          <button onclick="bukaModalGenerateMassal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
+            <i class="bi bi-lightning-charge-fill"></i> Generate Tagihan Massal
+          </button>
           <button onclick="bukaModalTambahIuranRT()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
             <i class="bi bi-plus-circle-fill"></i> + Tambah Tagihan / Iuran Warga
           </button>
@@ -70,10 +73,10 @@ function renderIuranCustom(data) {
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4">
           <div class="flex justify-between items-center mb-3">
             <div>
-              <h4 class="font-bold text-gray-800 text-sm">Administrator RT (Pengelola Iuran)</h4>
-              <p class="text-[10px] text-gray-400 font-mono">NIK: ${session?.nik || '-'} | Role: RT</p>
+              <h4 class="font-bold text-gray-800 text-sm">Administrator RW (Pengelola Iuran)</h4>
+              <p class="text-[10px] text-gray-400 font-mono">NIK: ${session?.nik || '-'} | Role: Admin RW</p>
             </div>
-            <span class="bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-purple-100"><i class="bi bi-shield-lock me-1"></i> Admin RT</span>
+            <span class="bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-purple-100"><i class="bi bi-shield-lock me-1"></i> Admin RW</span>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-xl">
@@ -745,6 +748,136 @@ async function bukaModalTambahIuranRT() {
   document.getElementById('btn-hapus-modal').style.display = 'none';
   let modal = new bootstrap.Modal(document.getElementById('formModal'));
   modal.show();
+}
+
+async function bukaModalGenerateMassal() {
+  let currentYear = new Date().getFullYear();
+  let yearOptions = '';
+  for (let y = currentYear - 1; y <= currentYear + 2; y++) {
+    yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+  }
+  let bulanSekarang = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][new Date().getMonth()];
+  let htmlForm = `
+    <div class="p-2 space-y-3 text-xs">
+      <div class="bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl p-3 text-[11px]">
+        <i class="bi bi-info-circle-fill me-1"></i> Ini akan membuat tagihan iuran untuk SEMUA warga target sekaligus (satu klik). Warga yang <b>sudah punya tagihan</b> di bulan &amp; tahun yang sama akan <b>dilewati otomatis</b> (tidak dobel).
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Target Warga</label>
+        <select id="massal-target-rt" class="w-full p-2 border rounded-xl bg-white">
+          <option value="">Semua RT (29, 30, 31, 32)</option>
+          <option value="29">Cuma RT 29</option>
+          <option value="30">Cuma RT 30</option>
+          <option value="31">Cuma RT 31</option>
+          <option value="32">Cuma RT 32</option>
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Bulan Iuran</label>
+        <select id="massal-bulan" class="w-full p-2 border rounded-xl bg-white">
+          ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].map(b => `<option value="${b}" ${b===bulanSekarang?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
+        <select id="massal-tahun" class="w-full p-2 border rounded-xl bg-white">${yearOptions}</select>
+      </div>
+      <div>
+        <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan per Warga (Rp)</label>
+        <input type="number" id="massal-nominal" value="25000" class="w-full p-2 border rounded-xl bg-white">
+      </div>
+      <div id="massal-progress" class="text-center text-gray-500 text-[11px]"></div>
+      <button type="button" id="btn-proses-massal" onclick="prosesGenerateMassal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-xl font-bold shadow transition mt-2">
+        <i class="bi bi-lightning-charge-fill me-1"></i> Buat Tagihan Sekarang
+      </button>
+    </div>
+  `;
+  document.getElementById('formModalTitle').innerText = 'Generate Tagihan Iuran Massal';
+  document.getElementById('dynamicForm').innerHTML = htmlForm;
+  document.getElementById('btn-hapus-modal').style.display = 'none';
+  let modal = new bootstrap.Modal(document.getElementById('formModal'));
+  modal.show();
+}
+
+async function prosesGenerateMassal() {
+  let targetRt = document.getElementById('massal-target-rt').value;
+  let bulan = document.getElementById('massal-bulan').value;
+  let tahun = document.getElementById('massal-tahun').value;
+  let nominal = document.getElementById('massal-nominal').value || '25000';
+  let btn = document.getElementById('btn-proses-massal');
+  let progressEl = document.getElementById('massal-progress');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+  progressEl.innerText = 'Mengambil data warga...';
+
+  try {
+    const { data: wargaAll } = await safeSupabaseSelect('Warga');
+    const { data: iuranAll } = await safeSupabaseSelect('Iuran');
+
+    let wargaTarget = (wargaAll || []).filter(w => {
+      let wNik = cariNilaiKolom(w, ['nik']);
+      let wRt = String(cariNilaiKolom(w, ['rt']) || '').trim();
+      if (!wNik) return false;
+      if (targetRt && wRt !== targetRt) return false;
+      return true;
+    });
+
+    let sudahAda = new Set();
+    (iuranAll || []).forEach(row => {
+      let rNik = String(cariNilaiKolom(row, ['nik']) || '').trim();
+      let rBulan = String(cariNilaiKolom(row, ['bulan']) || '').trim();
+      let rTahun = String(cariNilaiKolom(row, ['tahun']) || '').trim();
+      if (rNik && rBulan === bulan && rTahun === String(tahun)) {
+        sudahAda.add(rNik);
+      }
+    });
+
+    let toInsert = [];
+    wargaTarget.forEach(w => {
+      let wNik = String(cariNilaiKolom(w, ['nik']) || '').trim();
+      if (!wNik || sudahAda.has(wNik)) return;
+      toInsert.push({
+        id: 'IUR-' + Math.floor(100000 + Math.random() * 899999),
+        nik: wNik,
+        nama: cariNilaiKolom(w, ['nama_lengkap', 'nama']) || '-',
+        no_kk: cariNilaiKolom(w, ['no_kk']) || '',
+        bulan: bulan,
+        tahun: tahun,
+        nominal: nominal,
+        status: 'Belum Lunas',
+        tanggal_bayar: '-',
+        diterima_oleh: '-',
+        rt: sanitizeRT(cariNilaiKolom(w, ['rt']))
+      });
+    });
+
+    if (toInsert.length === 0) {
+      progressEl.innerHTML = '<span class="text-amber-600 font-bold">Tidak ada tagihan baru dibuat — semua warga target sudah punya tagihan untuk periode ini.</span>';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-lightning-charge-fill me-1"></i> Buat Tagihan Sekarang';
+      return;
+    }
+
+    progressEl.innerText = `Membuat ${toInsert.length} tagihan...`;
+    const { error } = await safeSupabaseInsert('Iuran', toInsert);
+    if (error) {
+      progressEl.innerHTML = `<span class="text-danger font-bold">Gagal: ${error.message}</span>`;
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-lightning-charge-fill me-1"></i> Buat Tagihan Sekarang';
+      return;
+    }
+
+    showUIToast(`${toInsert.length} tagihan iuran berhasil dibuat!`, 'success');
+    delete menuDataCache['Iuran'];
+    let modalEl = document.getElementById('formModal');
+    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    loadIuranView();
+  } catch (e) {
+    progressEl.innerHTML = `<span class="text-danger font-bold">Gagal: ${e.message}</span>`;
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-lightning-charge-fill me-1"></i> Buat Tagihan Sekarang';
+  }
 }
 
 function isiOtomatisWarga(selectEl) {

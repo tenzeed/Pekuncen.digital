@@ -391,7 +391,7 @@ function waLaporMasalahKeuangan(id) {
 async function loadKeuanganView() {
   currentActiveMenu = 'Keuangan';
   syncActiveNav('Keuangan');
-  document.getElementById('page-title').innerText = 'Laporan Keuangan & Kas RT';
+  document.getElementById('page-title').innerText = 'Laporan Keuangan & Kas RW';
   document.getElementById('main-content').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><br><small class="text-muted mt-2 d-block">Memuat data keuangan & sumbangan terverifikasi...</small></div>';
   document.getElementById('rek-info').style.display = 'none';
 
