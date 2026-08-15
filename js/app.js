@@ -166,8 +166,8 @@ const DEFAULT_LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 // aplikasi tidak akan bisa terhubung ke database Anda kalau ini
 // belum diganti.
 // ============================================================
-const SUPABASE_URL = 'GANTI_DENGAN_URL_SUPABASE_ANDA'; // contoh: https://xxxxxxxxx.supabase.co
-const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY_SUPABASE_ANDA';
+const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co'; // contoh: https://xxxxxxxxx.supabase.co
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpandiZ3F4b2t5eWlvZGVoZXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTI1MjgsImV4cCI6MjEwMjA4ODUyOH0.SE5PjvYG5sWXi9qgjPwWk7vyjSsF4OMiSy4xweLlmUM';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function safeSupabaseSelect(tableName) {
   try {
