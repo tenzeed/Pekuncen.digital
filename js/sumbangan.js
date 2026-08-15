@@ -3,8 +3,52 @@ let selectedSumbanganRow = null;
 function renderSumbanganCustom(data) {
   rawSumbanganData = data.rows || [];
   let headers = data.headers.map(h => h.toLowerCase().trim());
+  let nominalIdxSum = headers.findIndex(h => h.includes('nominal') || h.includes('jumlah'));
+  let statusIdxSum = headers.indexOf('status');
+  let jenisIdxSum = headers.indexOf('jenis_sumbangan');
+  let totalDiterima = 0, totalPending = 0, jumlahDiterima = 0;
+  let perAcara = {};
+  rawSumbanganData.forEach(r => {
+    let nom = nominalIdxSum > -1 ? (parseFloat(r[nominalIdxSum]) || 0) : 0;
+    let st = statusIdxSum > -1 ? String(r[statusIdxSum] || '').toLowerCase() : '';
+    let acara = (jenisIdxSum > -1 && r[jenisIdxSum]) ? String(r[jenisIdxSum]).trim() : 'Sumbangan Umum';
+    let isDiterima = st.includes('diterima') || st.includes('selesai');
+    if (isDiterima) { totalDiterima += nom; jumlahDiterima++; }
+    else totalPending += nom;
+    if (!perAcara[acara]) perAcara[acara] = { total: 0, jumlah: 0 };
+    if (isDiterima) { perAcara[acara].total += nom; perAcara[acara].jumlah++; }
+  });
+  let perAcaraHtml = Object.keys(perAcara).length > 0 ? Object.entries(perAcara).map(([acara, d]) => `
+    <div class="d-flex justify-content-between align-items-center py-2 px-1 border-bottom">
+      <div>
+        <div class="fw-bold text-gray-800" style="font-size:0.8rem;">${acara}</div>
+        <div class="text-[10px] text-muted">${d.jumlah} sumbangan terverifikasi</div>
+      </div>
+      <div class="fw-bold text-emerald-600" style="font-size:0.85rem;">Rp ${d.total.toLocaleString('id-ID')}</div>
+    </div>`).join('') : `<p class="text-center text-muted text-xs py-3">Belum ada sumbangan.</p>`;
   let html = `
     <div class="p-1 text-gray-800 font-sans">
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-4">
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 h-100">
+            <div class="text-[10px] font-bold text-muted uppercase mb-1"><i class="bi bi-check-circle-fill text-emerald-600 me-1"></i>Total Terkumpul</div>
+            <div class="fw-bold text-emerald-600" style="font-size:1.1rem;">Rp ${totalDiterima.toLocaleString('id-ID')}</div>
+            <div class="text-[10px] text-muted">${jumlahDiterima} sumbangan diverifikasi</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 h-100">
+            <div class="text-[10px] font-bold text-muted uppercase mb-1"><i class="bi bi-hourglass-split text-amber-500 me-1"></i>Menunggu Verifikasi</div>
+            <div class="fw-bold text-amber-600" style="font-size:1.1rem;">Rp ${totalPending.toLocaleString('id-ID')}</div>
+            <div class="text-[10px] text-muted">${rawSumbanganData.length - jumlahDiterima} sumbangan belum diverifikasi</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 mb-4">
+        <div class="text-[10px] font-bold text-muted uppercase mb-1"><i class="bi bi-pie-chart-fill text-indigo-600 me-1"></i>Rincian Per Acara / Keperluan</div>
+        <div class="mt-1">${perAcaraHtml}</div>
+        <div class="text-[10px] text-muted mt-2 pt-2 border-top"><i class="bi bi-info-circle me-1"></i>Dana sumbangan terpisah dari Kas Keuangan RW — dipakai khusus untuk acara/keperluan masing-masing.</div>
+      </div>
       <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
         <h2 class="font-bold text-base text-gray-800"><i class="bi bi-gift-fill me-2 text-primary"></i>Daftar Sumbangan</h2>
         <div class="d-flex align-items-center gap-2">
@@ -160,45 +204,16 @@ function waVerifikasiSumbangan(id) {
   bukaWa(noWaAdmin, `ID sumbangan ${id} mohon di verifikasi.`);
 }
 async function verifikasiSumbanganRT(id, status = 'Diterima') {
-  showUIConfirm(`Apakah Anda yakin ingin memverifikasi sumbangan ${id} dengan status "${status}" dan secara otomatis memasukkannya ke Kas Keuangan RT?`, async function() {
-    let headers = currentHeaders.map(h => h.toLowerCase().trim());
-    let idIdx = headers.indexOf('id') > -1 ? headers.indexOf('id') : 0;
-    let row = rawSumbanganData.find(r => r[idIdx] === id);
+  showUIConfirm(`Apakah Anda yakin ingin memverifikasi sumbangan ${id} dengan status "${status}"?`, async function() {
     let payload = { status: status };
     if (typeof menuDataCache !== 'undefined') {
       delete menuDataCache['Sumbangan'];
-      delete menuDataCache['Keuangan'];
     }
     const res = await callGASPost('updateDataDiSheet', { sheetName: 'Sumbangan', id: id, formData: payload });
-    if (row) {
-      let namaIdx = headers.findIndex(h => h.includes('nama'));
-      let nominalIdx = headers.findIndex(h => h.includes('nominal') || h.includes('jumlah') || h.includes('pemasukan'));
-      let ketIdx = headers.findIndex(h => h.includes('keterangan') || h.includes('jenis') || h.includes('peruntukan'));
-      let fotoIdx = headers.findIndex(h => h.includes('foto') || h.includes('bukti'));
-      let tglIdx = headers.findIndex(h => h.includes('tanggal') || h.includes('tgl') || h.includes('waktu'));
-
-      let namaVal = namaIdx > -1 ? row[namaIdx] : 'Warga';
-      let nominalVal = nominalIdx > -1 ? row[nominalIdx] : 0;
-      let ketVal = ketIdx > -1 ? row[ketIdx] : '';
-      let fotoVal = fotoIdx > -1 ? row[fotoIdx] : '-';
-      let tglRaw = (tglIdx > -1 && row[tglIdx]) ? row[tglIdx] : '';
-      let tglVal = (typeof formatFullDateTime === 'function') ? formatFullDateTime(tglRaw, id) : (tglRaw || new Date().toLocaleDateString('id-ID'));
-
-      await callGASPost('simpanDataKeSheet', {
-        sheetName: 'Keuangan',
-        formData: {
-          tanggal: tglVal,
-          keterangan: `[Sumbangan Warga] ${namaVal}${ketVal ? ` - ${ketVal}` : ''}`,
-          pemasukan: nominalVal,
-          pengeluaran: 0,
-          bukti_foto: fotoVal
-        }
-      }).catch(() => null);
-    }
     tutupDetailSumbangan();
-    showUIToast(res && res.message ? res.message : 'Sumbangan Berhasil Diverifikasi & Ditambahkan ke Kas Keuangan RT!', 'success');
+    showUIToast(res && res.message ? res.message : 'Status sumbangan berhasil diperbarui!', 'success');
     loadSumbanganView();
-  }, 'Verifikasi Sumbangan RT');
+  }, 'Verifikasi Sumbangan');
 }
 async function loadSumbanganView() {
   currentActiveMenu = 'Sumbangan';

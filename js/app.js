@@ -1671,6 +1671,55 @@ async function generateFormInputs(rowData) {
       renderExtraSuratFields(selVal, existingObj);
     }
   }
+  if (currentActiveMenu === 'Sumbangan' && !rowData) {
+    formBody.innerHTML += renderBlokPembayaranSumbangan();
+    setTimeout(() => {
+      let nominalInput = document.querySelector('.dynamic-input[data-key="nominal"]');
+      if (nominalInput) {
+        nominalInput.addEventListener('input', updateQrisSumbangan);
+        updateQrisSumbangan();
+      }
+    }, 50);
+  }
+}
+
+function renderBlokPembayaranSumbangan() {
+  let rekList = [];
+  try { rekList = JSON.parse((typeof appSettings !== 'undefined' && appSettings.payment_rekening) || '[]'); } catch(e) {}
+  let hasQris = (typeof appSettings !== 'undefined' && appSettings.payment_qris_string && appSettings.payment_qris_string.trim() !== '');
+  let rekHtml = (Array.isArray(rekList) && rekList.length > 0)
+    ? rekList.map(r => `<p class="mb-1"><b>${r.bank}</b>: <span class="font-mono text-blue-700">${r.no}</span> ${r.an ? `<small class="text-muted">(a.n ${r.an})</small>` : ''}</p>`).join('')
+    : `<p class="text-muted text-[11px] mb-0">Belum ada rekening terdaftar. Hubungi Admin RW untuk info pembayaran manual.</p>`;
+  return `
+    <div class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+      <p class="text-[11px] fw-bold text-blue-700 mb-2"><i class="bi bi-qr-code me-1"></i>Cara Menyumbang (opsional, isi nominal dulu di atas)</p>
+      ${hasQris ? `
+      <div class="text-center mb-2">
+        <div id="qris-sumbangan-container" class="d-inline-block p-2 bg-white rounded-xl border" style="min-height:150px; min-width:150px;">
+          <img id="qris-sumbangan-img" src="" style="max-width:150px; max-height:150px; display:none;">
+          <p id="qris-sumbangan-placeholder" class="text-[10px] text-muted mb-0 mt-4">Isi nominal untuk tampilkan QRIS</p>
+        </div>
+      </div>` : ''}
+      <div class="text-xs">${rekHtml}</div>
+      <p class="text-[10px] text-muted mt-2 mb-0"><i class="bi bi-info-circle me-1"></i>Setelah transfer/scan, unggah bukti di bawah ini lalu kirim. Admin akan verifikasi manual.</p>
+    </div>`;
+}
+
+function updateQrisSumbangan() {
+  let nominalInput = document.querySelector('.dynamic-input[data-key="nominal"]');
+  let nominal = nominalInput ? (parseFloat(nominalInput.value) || 0) : 0;
+  let img = document.getElementById('qris-sumbangan-img');
+  let placeholder = document.getElementById('qris-sumbangan-placeholder');
+  if (!img) return;
+  if (nominal > 0 && typeof appSettings !== 'undefined' && appSettings.payment_qris_string && typeof generateDynamicQRIS === 'function') {
+    let qrisDinamis = generateDynamicQRIS(appSettings.payment_qris_string, nominal);
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrisDinamis)}`;
+    img.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'block';
+  }
 }
 
 function compressImageFile(file, maxWidth = 800, maxHeight = 800, quality = 0.75) {
