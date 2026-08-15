@@ -199,27 +199,27 @@ function cetakPDFSuratPengantar(id) {
       <meta charset="UTF-8">
       <title>${suratContent.judul} - ${namaWarga}</title>
       <style>
-        @page { size: A4; margin: 20mm; }
-        body { font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; margin: 0; padding: 20px; font-size: 12pt; line-height: 1.5; }
-        .kop-surat { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 25px; }
-        .kop-logo { width: 85px; height: 85px; object-fit: contain; margin-right: 20px; }
+        @page { size: A4; margin: 15mm 18mm; }
+        body { font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; margin: 0; padding: 20px; font-size: 12pt; line-height: 1.4; }
+        .kop-surat { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 16px; }
+        .kop-logo { width: 70px; height: 70px; object-fit: contain; margin-right: 16px; }
         .kop-text { flex: 1; text-align: center; }
-        .kop-text h2 { margin: 0; font-size: 15pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kop-text h3 { margin: 2px 0; font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-        .kop-text p { margin: 0; font-size: 10pt; font-style: italic; }
+        .kop-text h2 { margin: 0; font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kop-text h3 { margin: 2px 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+        .kop-text p { margin: 0; font-size: 9pt; font-style: italic; }
         
-        .surat-title { text-align: center; margin-bottom: 25px; }
-        .surat-title h4 { margin: 0; font-size: 14pt; text-decoration: underline; text-transform: uppercase; font-weight: bold; }
-        .surat-title p { margin: 3px 0 0 0; font-size: 11pt; }
+        .surat-title { text-align: center; margin-bottom: 14px; }
+        .surat-title h4 { margin: 0; font-size: 13pt; text-decoration: underline; text-transform: uppercase; font-weight: bold; }
+        .surat-title p { margin: 3px 0 0 0; font-size: 10pt; }
         
-        .content { margin-bottom: 30px; text-align: justify; }
-        .table-data { width: 100%; margin: 12px 0 15px 15px; border-collapse: collapse; }
-        .table-data td { padding: 4px 8px; vertical-align: top; font-size: 11pt; }
-        .table-data td.label { width: 180px; }
+        .content { margin-bottom: 14px; text-align: justify; }
+        .table-data { width: 100%; margin: 8px 0 10px 10px; border-collapse: collapse; }
+        .table-data td { padding: 2px 8px; vertical-align: top; font-size: 11pt; }
+        .table-data td.label { width: 170px; }
         
-        .ttd-section { width: 100%; margin-top: 40px; border-collapse: collapse; page-break-inside: avoid; }
+        .ttd-section { width: 100%; margin-top: 20px; border-collapse: collapse; page-break-inside: avoid; }
         .ttd-section td { width: 50%; text-align: center; vertical-align: top; padding: 0 10px; font-size: 11pt; }
-        .ttd-space { height: 75px; display: flex; align-items: center; justify-content: center; }
+        .ttd-space { height: 55px; display: flex; align-items: center; justify-content: center; }
         .ttd-nama { font-weight: bold; text-decoration: underline; }
         
         @media print {
@@ -253,25 +253,25 @@ function cetakPDFSuratPengantar(id) {
 
       <!-- Tanda Tangan Pemohon -->
       ${ttdPemohon ? `
-      <div style="margin: 30px 0 20px 0; page-break-inside: avoid;">
+      <div style="margin: 14px 0 10px 0; page-break-inside: avoid;">
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="width: 50%; vertical-align: top; padding-right: 20px;">
-              <p style="font-size: 11pt; margin: 0 0 5px 0;">Yang bertanda tangan / menyetujui,<br><b>Pemohon</b></p>
-              <div style="height: 85px; display: flex; align-items: center; justify-content: flex-start; padding: 5px 0;">
-                <img src="${ttdPemohon}" style="max-height: 80px; max-width: 200px; object-fit: contain;" alt="TTD Pemohon">
+              <p style="font-size: 10pt; margin: 0 0 3px 0;">Yang bertanda tangan / menyetujui,<br><b>Pemohon</b></p>
+              <div style="height: 55px; display: flex; align-items: center; justify-content: flex-start; padding: 2px 0;">
+                <img src="${ttdPemohon}" style="max-height: 50px; max-width: 160px; object-fit: contain;" alt="TTD Pemohon">
               </div>
-              <p style="font-weight: bold; text-decoration: underline; font-size: 11pt; margin: 0;">( ${namaPemohon} )</p>
+              <p style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin: 0;">( ${namaPemohon} )</p>
             </td>
             <td style="width: 50%; vertical-align: top;"></td>
           </tr>
         </table>
       </div>
-      <hr style="border: none; border-top: 1px dashed #ccc; margin: 15px 0;">` : ''}
+      <hr style="border: none; border-top: 1px dashed #ccc; margin: 8px 0;">` : ''}
 
-      ${!isSelesai ? `<div style="text-align:center; margin: 20px 0; padding: 10px; border: 2px dashed #f59e0b; border-radius: 8px; background: #fffbeb;">
-        <p style="color:#b45309; font-weight:bold; font-size:11pt; margin:0;">⚠️ SURAT INI BELUM DISETUJUI / STATUS: ${statusSurat || 'Belum di verifikasi'}</p>
-        <p style="color:#92400e; font-size:9pt; margin:4px 0 0 0;">Tanda tangan akan muncul setelah status surat diubah menjadi <b>Selesai</b> atau <b>Diterima</b> oleh RT.</p>
+      ${!isSelesai ? `<div style="text-align:center; margin: 10px 0; padding: 6px; border: 2px dashed #f59e0b; border-radius: 8px; background: #fffbeb;">
+        <p style="color:#b45309; font-weight:bold; font-size:10pt; margin:0;">⚠️ SURAT INI BELUM DISETUJUI / STATUS: ${statusSurat || 'Belum di verifikasi'}</p>
+        <p style="color:#92400e; font-size:8pt; margin:3px 0 0 0;">Tanda tangan akan muncul setelah status surat diubah menjadi <b>Selesai</b> atau <b>Diterima</b> oleh RT.</p>
       </div>` : ''}
 
       <table class="ttd-section">
