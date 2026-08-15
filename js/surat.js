@@ -138,7 +138,7 @@ function cetakPDFSuratPengantar(id) {
   let alamatWarga = alamatIdx > -1 ? (row[alamatIdx] || '-') : '-';
   let jenisSurat = jenisIdx > -1 ? (row[jenisIdx] || 'Surat Pengantar') : 'Surat Pengantar';
   let tanggalSurat = tglIdx > -1 ? (row[tglIdx] || '-') : '-';
-  let rtWarga = rtIdx > -1 ? (row[rtIdx] || '05') : '05';
+  let rtWarga = rtIdx > -1 ? (row[rtIdx] || '-') : '-';
   
   let keterangan = '-';
   let ttdPemohon = '';
@@ -162,14 +162,14 @@ function cetakPDFSuratPengantar(id) {
   let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Kelurahan Palmerah, Kota Jakarta Barat';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
   let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
-  let namaSekretaris = (typeof appSettings !== 'undefined' && appSettings.nama_sekretaris) ? appSettings.nama_sekretaris : 'Sekretaris RT';
-  let namaKetuaRt = (typeof appSettings !== 'undefined' && appSettings.nama_rt_ketua) ? appSettings.nama_rt_ketua : 'Ketua RT';
+  let namaSekretaris = (typeof appSettings !== 'undefined' && appSettings.nama_sekretaris) ? appSettings.nama_sekretaris : 'Sekretaris RW';
+  let namaKetuaRt = (typeof appSettings !== 'undefined' && appSettings.nama_rt_ketua) ? appSettings.nama_rt_ketua : 'Ketua RW';
 
   // Tanda tangan hanya ditampilkan jika status surat sudah Selesai/Diterima
   let ttdSekretaris = (isSelesai && typeof appSettings !== 'undefined' && appSettings.ttd_sekretaris) ? appSettings.ttd_sekretaris : '';
   let ttdKetuaRt = (isSelesai && typeof appSettings !== 'undefined' && appSettings.ttd_ketua_rt) ? appSettings.ttd_ketua_rt : '';
 
-  let suratDataPayload = { namaWarga, nikWarga, alamatWarga, keterangan, tanggalSurat };
+  let suratDataPayload = { namaWarga, nikWarga, alamatWarga, rtWarga, keterangan, tanggalSurat };
   let suratContent = (typeof renderSuratBody === 'function') 
     ? renderSuratBody(jenisSurat, suratDataPayload)
     : {
