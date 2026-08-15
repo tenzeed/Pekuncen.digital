@@ -141,20 +141,10 @@ function cetakPDFSuratPengantar(id) {
   let rtWarga = rtIdx > -1 ? (row[rtIdx] || '-') : '-';
   
   let keterangan = '-';
-  let ttdPemohon = '';
-  let namaPemohon = namaWarga;
   if (Array.isArray(row)) {
     keterangan = ketIdx > -1 ? (row[ketIdx] || '-') : '-';
-    // Ambil TTD pemohon dari kolom ttd_pemohon
-    let ttdIdx = headers.findIndex(h => h.includes('ttd_pemohon') || h.includes('tanda_tangan'));
-    if (ttdIdx > -1) ttdPemohon = row[ttdIdx] || '';
   } else if (typeof row === 'object') {
     keterangan = row.keterangan || row.Keterangan || row.KETERANGAN || (ketIdx > -1 ? row[headers[ketIdx]] : '-');
-    ttdPemohon = row.ttd_pemohon || row.tanda_tangan || '';
-  }
-  // Fallback ke sessionStorage jika TTD belum disimpan ke DB (form baru)
-  if (!ttdPemohon && typeof getTTDPemohon === 'function') {
-    ttdPemohon = getTTDPemohon() || '';
   }
 
   let titleApp = (typeof appSettings !== 'undefined' && appSettings.app_title) ? appSettings.app_title : 'Pekuncen Digital';
@@ -162,11 +152,14 @@ function cetakPDFSuratPengantar(id) {
   let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Kelurahan Palmerah, Kota Jakarta Barat';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
   let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
-  let namaSekretaris = (typeof appSettings !== 'undefined' && appSettings.nama_sekretaris) ? appSettings.nama_sekretaris : 'Sekretaris RW';
+  // Ketua RT mengikuti RT spesifik warga pemohon; fallback ke label generik kalau RT tidak valid/belum diatur
+  let rtValid = ['29','30','31','32'].includes(String(rtWarga).trim());
+  let namaKetuaRtSpesifik = (typeof appSettings !== 'undefined' && rtValid && appSettings['nama_ketua_rt_' + rtWarga])
+    ? appSettings['nama_ketua_rt_' + rtWarga] : `Ketua RT ${rtValid ? rtWarga : '(belum diatur)'}`;
   let namaKetuaRt = (typeof appSettings !== 'undefined' && appSettings.nama_rt_ketua) ? appSettings.nama_rt_ketua : 'Ketua RW';
 
   // Tanda tangan hanya ditampilkan jika status surat sudah Selesai/Diterima
-  let ttdSekretaris = (isSelesai && typeof appSettings !== 'undefined' && appSettings.ttd_sekretaris) ? appSettings.ttd_sekretaris : '';
+  let ttdKetuaRtSpesifik = (isSelesai && typeof appSettings !== 'undefined' && rtValid && appSettings['ttd_ketua_rt_' + rtWarga]) ? appSettings['ttd_ketua_rt_' + rtWarga] : '';
   let ttdKetuaRt = (isSelesai && typeof appSettings !== 'undefined' && appSettings.ttd_ketua_rt) ? appSettings.ttd_ketua_rt : '';
 
   let suratDataPayload = { namaWarga, nikWarga, alamatWarga, rtWarga, keterangan, tanggalSurat };
@@ -251,40 +244,23 @@ function cetakPDFSuratPengantar(id) {
         ${suratContent.isi}
       </div>
 
-      <!-- Tanda Tangan Pemohon -->
-      ${ttdPemohon ? `
-      <div style="margin: 14px 0 10px 0; page-break-inside: avoid;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="width: 50%; vertical-align: top; padding-right: 20px;">
-              <p style="font-size: 10pt; margin: 0 0 3px 0;">Yang bertanda tangan / menyetujui,<br><b>Pemohon</b></p>
-              <div style="height: 55px; display: flex; align-items: center; justify-content: flex-start; padding: 2px 0;">
-                <img src="${ttdPemohon}" style="max-height: 50px; max-width: 160px; object-fit: contain;" alt="TTD Pemohon">
-              </div>
-              <p style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin: 0;">( ${namaPemohon} )</p>
-            </td>
-            <td style="width: 50%; vertical-align: top;"></td>
-          </tr>
-        </table>
-      </div>
-      <hr style="border: none; border-top: 1px dashed #ccc; margin: 8px 0;">` : ''}
-
       ${!isSelesai ? `<div style="text-align:center; margin: 10px 0; padding: 6px; border: 2px dashed #f59e0b; border-radius: 8px; background: #fffbeb;">
         <p style="color:#b45309; font-weight:bold; font-size:10pt; margin:0;">⚠️ SURAT INI BELUM DISETUJUI / STATUS: ${statusSurat || 'Belum di verifikasi'}</p>
         <p style="color:#92400e; font-size:8pt; margin:3px 0 0 0;">Tanda tangan akan muncul setelah status surat diubah menjadi <b>Selesai</b> atau <b>Diterima</b> oleh RT.</p>
       </div>` : ''}
 
+      <p style="text-align:right; margin: 0 0 6px 0; font-size:11pt;">Pekuncen, ${todayStr}</p>
       <table class="ttd-section">
         <tr>
           <td>
-            <p>Dibuat oleh:<br><b>Sekretaris ${rtRwText}</b></p>
+            <p>Dibuat oleh:<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
             <div class="ttd-space">
-              ${ttdSekretaris ? `<img src="${ttdSekretaris}" style="max-height: 70px; max-width: 150px; object-fit: contain; margin: 0 auto; display: block;">` : ''}
+              ${ttdKetuaRtSpesifik ? `<img src="${ttdKetuaRtSpesifik}" style="max-height: 70px; max-width: 150px; object-fit: contain; margin: 0 auto; display: block;">` : ''}
             </div>
-            <p class="ttd-nama">( ${namaSekretaris} )</p>
+            <p class="ttd-nama">( ${namaKetuaRtSpesifik} )</p>
           </td>
           <td>
-            <p>Tanggal: ${todayStr}<br>Diketahui oleh:<br><b>Ketua ${rtRwText}</b></p>
+            <p>Diketahui oleh:<br><b>Ketua ${rtRwText}</b></p>
             <div class="ttd-space">
               ${ttdKetuaRt ? `<img src="${ttdKetuaRt}" style="max-height: 70px; max-width: 150px; object-fit: contain; margin: 0 auto; display: block;">` : ''}
             </div>

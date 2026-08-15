@@ -166,8 +166,8 @@ const DEFAULT_LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
 // aplikasi tidak akan bisa terhubung ke database Anda kalau ini
 // belum diganti.
 // ============================================================
-const SUPABASE_URL = 'https://tijwbgqxokyyiodehepa.supabase.co'; // contoh: 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpandiZ3F4b2t5eWlvZGVoZXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTI1MjgsImV4cCI6MjEwMjA4ODUyOH0.SE5PjvYG5sWXi9qgjPwWk7vyjSsF4OMiSy4xweLlmUM';
+const SUPABASE_URL = 'GANTI_DENGAN_URL_SUPABASE_ANDA'; // contoh: https://xxxxxxxxx.supabase.co
+const SUPABASE_KEY = 'GANTI_DENGAN_ANON_KEY_SUPABASE_ANDA';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function safeSupabaseSelect(tableName) {
   try {
@@ -697,7 +697,7 @@ const FALLBACK_HEADERS = {
   'Warga': ['id', 'nama_lengkap', 'nama_panggilan', 'nik', 'no_kk', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'status_nikah', 'status_tinggal', 'pekerjaan', 'no_hp', 'foto_url', 'rt'],
   'Iuran': ['id', 'nik', 'nama', 'no_kk', 'bulan', 'tahun', 'nominal', 'status', 'tanggal_bayar', 'diterima_oleh', 'bukti_transfer', 'rt'],
   'Pengaduan': ['id', 'nama', 'nik', 'no_hp', 'jenis_aduan', 'keterangan', 'tanggal', 'foto_url', 'status', 'foto_penyelesaian', 'rt'],
-  'SuratPengantar': ['id', 'nama', 'nik', 'alamat', 'rt', 'rw', 'jenis_surat', 'keterangan', 'ttd_pemohon', 'status', 'keterangan_admin'],
+  'SuratPengantar': ['id', 'nama', 'nik', 'alamat', 'rt', 'rw', 'jenis_surat', 'keterangan', 'status', 'keterangan_admin'],
   'Keuangan': ['id', 'tanggal', 'pemasukan', 'pengeluaran', 'keterangan', 'saldo', 'foto_url', 'rt'],
   'Sumbangan': ['id', 'nama', 'tanggal', 'jenis_sumbangan', 'keterangan', 'nominal', 'bukti_transfer', 'status', 'nik', 'rt'],
   'Aset': ['id', 'nama_barang', 'kondisi', 'jumlah', 'status_barang', 'rt'],
@@ -1483,19 +1483,6 @@ async function bukaModalEdit(id) {
   await generateFormInputs(rowData);
   if (!bootstrapModalInstance) bootstrapModalInstance = new bootstrap.Modal(document.getElementById('formModal'));
   bootstrapModalInstance.show();
-  if (currentActiveMenu === 'SuratPengantar' && typeof initInlineCanvas === 'function') {
-    let existingTTD = '';
-    if (rowData) {
-      if (Array.isArray(rowData)) {
-        let hh = (currentHeaders || []).map(h => (h || '').toLowerCase().trim());
-        let ttdIdx = hh.findIndex(h => h.includes('ttd_pemohon') || h.includes('tanda_tangan'));
-        if (ttdIdx > -1) existingTTD = rowData[ttdIdx] || '';
-      } else if (typeof rowData === 'object') {
-        existingTTD = rowData.ttd_pemohon || rowData.tanda_tangan || '';
-      }
-    }
-    initInlineCanvas(existingTTD);
-  }
 }
 async function generateFormInputs(rowData) {
   let formBody = document.getElementById('dynamicForm');
@@ -1644,10 +1631,6 @@ async function generateFormInputs(rowData) {
       formBody.innerHTML += `<div class="mb-3"><label class="form-label small text-secondary fw-bold">${labelText}</label>${inputHtml}</div>`;
     }
   }
-  // ── Reset session TTD saat buka form baru ──────────────────
-  if (currentActiveMenu === 'SuratPengantar' && !rowData) {
-    if (typeof resetTTDSession === 'function') resetTTDSession();
-  }
   if (currentActiveMenu === 'SuratPengantar' && typeof renderExtraSuratFields === 'function') {
     let jenisSelect = document.querySelector('.dynamic-input[data-key*="jenis"], .dynamic-input[data-key*="perihal"], .dynamic-input[data-key*="keperluan"], .dynamic-input[data-key*="JENIS"]');
     let selVal = jenisSelect ? jenisSelect.value : '';
@@ -1687,21 +1670,6 @@ async function generateFormInputs(rowData) {
     if (selVal) {
       renderExtraSuratFields(selVal, existingObj);
     }
-  }
-  // ── Tambahkan field Tanda Tangan Pemohon ──────────────────
-  if (currentActiveMenu === 'SuratPengantar' && typeof renderFieldTTDPemohon === 'function') {
-    // Ambil TTD tersimpan dari rowData jika ada (kolom ttd_pemohon)
-    let existingTTD = '';
-    if (rowData) {
-      if (Array.isArray(rowData)) {
-        let hh = (currentHeaders || []).map(h => (h || '').toLowerCase().trim());
-        let ttdIdx = hh.findIndex(h => h.includes('ttd_pemohon') || h.includes('tanda_tangan'));
-        if (ttdIdx > -1) existingTTD = rowData[ttdIdx] || '';
-      } else if (typeof rowData === 'object') {
-        existingTTD = rowData.ttd_pemohon || rowData.tanda_tangan || '';
-      }
-    }
-    formBody.innerHTML += renderFieldTTDPemohon(existingTTD);
   }
 }
 
@@ -1759,11 +1727,6 @@ function submitFormBaru(e) {
       let ketKey = Object.keys(payload).find(k => k.toLowerCase() === 'keterangan' || (k.toLowerCase().includes('keterangan') && !k.toLowerCase().includes('admin')));
       if (!ketKey) ketKey = 'keterangan';
       payload[ketKey] = JSON.stringify(extraObj);
-    }
-    // ── Sertakan Tanda Tangan Pemohon ──────────────────────
-    if (typeof getTTDPemohonInline === 'function') {
-      let ttdData = getTTDPemohonInline();
-      if (ttdData) payload['ttd_pemohon'] = ttdData;
     }
   }
   let filePromises = [];
@@ -1892,10 +1855,16 @@ let appSettings = {
   app_logo: './img/logo.webp',
   app_theme: 'blue',
   app_theme_color: '#1e3a8a',
-  nama_sekretaris: 'Sekretaris RW 08',
   nama_rt_ketua: 'Ketua RW 08',
-  ttd_sekretaris: '',
+  nama_ketua_rt_29: 'Ketua RT 29',
+  nama_ketua_rt_30: 'Ketua RT 30',
+  nama_ketua_rt_31: 'Ketua RT 31',
+  nama_ketua_rt_32: 'Ketua RT 32',
   ttd_ketua_rt: '',
+  ttd_ketua_rt_29: '',
+  ttd_ketua_rt_30: '',
+  ttd_ketua_rt_31: '',
+  ttd_ketua_rt_32: '',
   payment_rekening: JSON.stringify([]),
   payment_qris_string: '',
   payment_qris_name: 'RW 08 Pekuncen',
@@ -2212,9 +2181,7 @@ async function simpanIdentitasDanTema(e) {
   let rtRwText = document.getElementById('set-rt-rw-text') ? document.getElementById('set-rt-rw-text').value.trim() : 'RW 08 - Blok Pekuncen';
   let namaKelurahan = document.getElementById('set-nama-kelurahan') ? document.getElementById('set-nama-kelurahan').value.trim() : '';
   let alamatRt = document.getElementById('set-alamat-rt') ? document.getElementById('set-alamat-rt').value.trim() : '';
-  let namaSekretaris = document.getElementById('set-nama-sekretaris') ? document.getElementById('set-nama-sekretaris').value.trim() : '';
   let namaRtKetua = document.getElementById('set-nama-rt-ketua') ? document.getElementById('set-nama-rt-ketua').value.trim() : '';
-  let ttdSekretaris = document.getElementById('set-ttd-sekretaris') ? document.getElementById('set-ttd-sekretaris').value.trim() : '';
   let ttdKetuaRt = document.getElementById('set-ttd-ketua-rt') ? document.getElementById('set-ttd-ketua-rt').value.trim() : '';
   let geminiApiKey = document.getElementById('set-gemini-api-key') ? document.getElementById('set-gemini-api-key').value.trim() : '';
   let settingsArray = [
@@ -2228,12 +2195,16 @@ async function simpanIdentitasDanTema(e) {
     { kunci: 'app_theme', nilai: theme },
     { kunci: 'app_theme_color', nilai: themeColor },
     { kunci: 'rt_wa_number', nilai: waNumber },
-    { kunci: 'nama_sekretaris', nilai: namaSekretaris },
     { kunci: 'nama_rt_ketua', nilai: namaRtKetua },
-    { kunci: 'ttd_sekretaris', nilai: ttdSekretaris },
     { kunci: 'ttd_ketua_rt', nilai: ttdKetuaRt },
     { kunci: 'gemini_api_key', nilai: geminiApiKey }
   ];
+  ['29','30','31','32'].forEach(rt => {
+    let namaEl = document.getElementById('set-nama-ketua-rt-' + rt);
+    let ttdEl = document.getElementById('set-ttd-ketua-rt-' + rt);
+    settingsArray.push({ kunci: 'nama_ketua_rt_' + rt, nilai: namaEl ? namaEl.value.trim() : '' });
+    settingsArray.push({ kunci: 'ttd_ketua_rt_' + rt, nilai: ttdEl ? ttdEl.value.trim() : '' });
+  });
   appSettings.gemini_api_key = geminiApiKey;
   try { localStorage.setItem('rt_gemini_api_key', geminiApiKey); } catch(e) {}
 
@@ -2524,18 +2495,17 @@ function initTtdSignaturePad(canvasId, type) {
   canvas.addEventListener('touchend', endDraw);
 }
 function hapusTtdCanvas(type) {
-  let canvasId = type === 'sekretaris' ? 'canvas-ttd-sekretaris' : 'canvas-ttd-ketua';
-  let canvas = document.getElementById(canvasId);
+  let canvas = document.getElementById('canvas-ttd-' + type);
   if (canvas) {
     let ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 }
 function simpanTtdCanvas(type) {
-  let canvasId = type === 'sekretaris' ? 'canvas-ttd-sekretaris' : 'canvas-ttd-ketua';
-  let inputId = type === 'sekretaris' ? 'set-ttd-sekretaris' : 'set-ttd-ketua-rt';
-  let previewWrpId = type === 'sekretaris' ? 'preview-ttd-sekretaris-wrapper' : 'preview-ttd-ketua-wrapper';
-  let previewImgId = type === 'sekretaris' ? 'preview-ttd-sekretaris' : 'preview-ttd-ketua-rt';
+  let canvasId = 'canvas-ttd-' + type;
+  let inputId = 'set-ttd-' + type;
+  let previewWrpId = 'preview-ttd-' + type + '-wrapper';
+  let previewImgId = 'preview-ttd-' + type;
   let canvas = document.getElementById(canvasId);
   if (!canvas) return;
   let imgData = canvas.toDataURL('image/png');
@@ -2574,7 +2544,15 @@ async function renderPengaturanRTView() {
   let wargaListForReg = [];
   try {
     const { data: wargaData } = await safeSupabaseSelect('Warga');
-    wargaListForReg = wargaData || [];
+    let nikSudahPunyaAkun = new Set(
+      (usersList || [])
+        .map(u => String(cariNilaiKolom(u, ['nik']) || '').trim())
+        .filter(n => n)
+    );
+    wargaListForReg = (wargaData || []).filter(w => {
+      let wNik = String(cariNilaiKolom(w, ['nik']) || '').trim();
+      return wNik && !nikSudahPunyaAkun.has(wNik);
+    });
   } catch(e) {}
   let currentRek = [];
   try { currentRek = JSON.parse(appSettings.payment_rekening || '[]'); } catch(e) {}
@@ -2660,51 +2638,58 @@ async function renderPengaturanRTView() {
               </div>
               <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                  <label class="form-label font-semibold text-xs text-gray-700">NAMA SEKRETARIS RW <small class="text-primary font-bold">(Teks Tanda Tangan Surat PDF)</small></label>
-                  <input type="text" id="set-nama-sekretaris" class="form-control" value="${appSettings.nama_sekretaris || 'Sekretaris RW 08'}" placeholder="Contoh: Nama Sekretaris RW">
-                </div>
-                <div class="col-md-6">
                   <label class="form-label font-semibold text-xs text-gray-700">NAMA KETUA RW <small class="text-primary font-bold">(Teks Tanda Tangan Surat PDF)</small></label>
                   <input type="text" id="set-nama-rt-ketua" class="form-control" value="${appSettings.nama_rt_ketua || 'Ketua RW 08'}" placeholder="Contoh: Nama Ketua RW">
                 </div>
               </div>
+              <div class="row g-3 mb-3 p-3 bg-light border rounded-3">
+                <div class="col-12 mb-1">
+                  <h6 class="fw-bold text-dark text-xs mb-0"><i class="bi bi-people-fill me-1 text-primary"></i> NAMA KETUA RT (Teks Tanda Tangan Surat PDF, sesuai RT warga pemohon)</h6>
+                </div>
+                ${['29','30','31','32'].map(rt => `
+                <div class="col-md-3">
+                  <label class="form-label font-semibold text-xs text-gray-700">KETUA RT ${rt}</label>
+                  <input type="text" id="set-nama-ketua-rt-${rt}" class="form-control" value="${appSettings['nama_ketua_rt_' + rt] || 'Ketua RT ' + rt}" placeholder="Nama Ketua RT ${rt}">
+                </div>`).join('')}
+              </div>
               <div class="row g-3 mb-4 p-3 bg-light border rounded-3">
                 <div class="col-12 mb-1">
                   <h6 class="fw-bold text-dark text-xs mb-0"><i class="bi bi-pen-fill me-1 text-primary"></i> TANDA TANGAN DIGITAL (CETAK SURAT PDF)</h6>
-                  <small class="text-muted text-[11px]">Tanda tangan langsung di kotak di bawah menggunakan jari/stylus/mouse. Tanda tangan akan otomatis dicetak pada PDF Surat Pengantar.</small>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label font-semibold text-xs text-gray-700">TANDA TANGAN SEKRETARIS RW</label>
-                  <div class="p-2 border rounded bg-white text-center">
-                    <canvas id="canvas-ttd-sekretaris" width="280" height="110" style="border:2px dashed #6c757d; border-radius:8px; cursor:crosshair; touch-action:none; background:#fff; display:block; margin:0 auto;" title="Tanda tangan di sini"></canvas>
-                    <div class="d-flex gap-2 mt-2 justify-content-center">
-                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusTtdCanvas('sekretaris')"><i class="bi bi-eraser-fill me-1"></i>Hapus</button>
-                      <button type="button" class="btn btn-sm btn-outline-success" onclick="simpanTtdCanvas('sekretaris')"><i class="bi bi-check-circle-fill me-1"></i>Gunakan Tanda Tangan Ini</button>
-                    </div>
-                    <input type="hidden" id="set-ttd-sekretaris" value="${appSettings.ttd_sekretaris || ''}">
-                    <div id="preview-ttd-sekretaris-wrapper" class="mt-2" style="${appSettings.ttd_sekretaris ? '' : 'display:none;'}">
-                      <small class="text-success font-bold text-[10px] d-block mb-1"><i class="bi bi-check-circle me-1"></i>Tanda tangan tersimpan:</small>
-                      <img id="preview-ttd-sekretaris" src="${appSettings.ttd_sekretaris || ''}" class="border rounded" style="max-height:55px;object-fit:contain;">
-                      <button type="button" class="btn btn-xs btn-link text-danger text-[10px] d-block mx-auto mt-1" onclick="document.getElementById('set-ttd-sekretaris').value=''; document.getElementById('preview-ttd-sekretaris-wrapper').style.display='none'; hapusTtdCanvas('sekretaris');">✕ Reset</button>
-                    </div>
-                  </div>
+                  <small class="text-muted text-[11px]">Tanda tangan langsung di kotak di bawah menggunakan jari/stylus/mouse. Setiap surat akan otomatis memakai tanda tangan Ketua RT sesuai RT warga pemohon, berdampingan dengan tanda tangan Ketua RW.</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label font-semibold text-xs text-gray-700">TANDA TANGAN KETUA RW</label>
                   <div class="p-2 border rounded bg-white text-center">
-                    <canvas id="canvas-ttd-ketua" width="280" height="110" style="border:2px dashed #6c757d; border-radius:8px; cursor:crosshair; touch-action:none; background:#fff; display:block; margin:0 auto;" title="Tanda tangan di sini"></canvas>
+                    <canvas id="canvas-ttd-ketua-rt" width="280" height="110" style="border:2px dashed #6c757d; border-radius:8px; cursor:crosshair; touch-action:none; background:#fff; display:block; margin:0 auto;" title="Tanda tangan di sini"></canvas>
                     <div class="d-flex gap-2 mt-2 justify-content-center">
-                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusTtdCanvas('ketua')"><i class="bi bi-eraser-fill me-1"></i>Hapus</button>
-                      <button type="button" class="btn btn-sm btn-outline-success" onclick="simpanTtdCanvas('ketua')"><i class="bi bi-check-circle-fill me-1"></i>Gunakan Tanda Tangan Ini</button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusTtdCanvas('ketua-rt')"><i class="bi bi-eraser-fill me-1"></i>Hapus</button>
+                      <button type="button" class="btn btn-sm btn-outline-success" onclick="simpanTtdCanvas('ketua-rt')"><i class="bi bi-check-circle-fill me-1"></i>Gunakan Tanda Tangan Ini</button>
                     </div>
                     <input type="hidden" id="set-ttd-ketua-rt" value="${appSettings.ttd_ketua_rt || ''}">
-                    <div id="preview-ttd-ketua-wrapper" class="mt-2" style="${appSettings.ttd_ketua_rt ? '' : 'display:none;'}">
+                    <div id="preview-ttd-ketua-rt-wrapper" class="mt-2" style="${appSettings.ttd_ketua_rt ? '' : 'display:none;'}">
                       <small class="text-success font-bold text-[10px] d-block mb-1"><i class="bi bi-check-circle me-1"></i>Tanda tangan tersimpan:</small>
                       <img id="preview-ttd-ketua-rt" src="${appSettings.ttd_ketua_rt || ''}" class="border rounded" style="max-height:55px;object-fit:contain;">
-                      <button type="button" class="btn btn-xs btn-link text-danger text-[10px] d-block mx-auto mt-1" onclick="document.getElementById('set-ttd-ketua-rt').value=''; document.getElementById('preview-ttd-ketua-wrapper').style.display='none'; hapusTtdCanvas('ketua');">✕ Reset</button>
+                      <button type="button" class="btn btn-xs btn-link text-danger text-[10px] d-block mx-auto mt-1" onclick="document.getElementById('set-ttd-ketua-rt').value=''; document.getElementById('preview-ttd-ketua-rt-wrapper').style.display='none'; hapusTtdCanvas('ketua-rt');">✕ Reset</button>
                     </div>
                   </div>
                 </div>
+                ${['29','30','31','32'].map(rt => `
+                <div class="col-md-6">
+                  <label class="form-label font-semibold text-xs text-gray-700">TANDA TANGAN KETUA RT ${rt}</label>
+                  <div class="p-2 border rounded bg-white text-center">
+                    <canvas id="canvas-ttd-ketua-rt-${rt}" width="280" height="110" style="border:2px dashed #6c757d; border-radius:8px; cursor:crosshair; touch-action:none; background:#fff; display:block; margin:0 auto;" title="Tanda tangan di sini"></canvas>
+                    <div class="d-flex gap-2 mt-2 justify-content-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusTtdCanvas('ketua-rt-${rt}')"><i class="bi bi-eraser-fill me-1"></i>Hapus</button>
+                      <button type="button" class="btn btn-sm btn-outline-success" onclick="simpanTtdCanvas('ketua-rt-${rt}')"><i class="bi bi-check-circle-fill me-1"></i>Gunakan Tanda Tangan Ini</button>
+                    </div>
+                    <input type="hidden" id="set-ttd-ketua-rt-${rt}" value="${appSettings['ttd_ketua_rt_' + rt] || ''}">
+                    <div id="preview-ttd-ketua-rt-${rt}-wrapper" class="mt-2" style="${appSettings['ttd_ketua_rt_' + rt] ? '' : 'display:none;'}">
+                      <small class="text-success font-bold text-[10px] d-block mb-1"><i class="bi bi-check-circle me-1"></i>Tanda tangan tersimpan:</small>
+                      <img id="preview-ttd-ketua-rt-${rt}" src="${appSettings['ttd_ketua_rt_' + rt] || ''}" class="border rounded" style="max-height:55px;object-fit:contain;">
+                      <button type="button" class="btn btn-xs btn-link text-danger text-[10px] d-block mx-auto mt-1" onclick="document.getElementById('set-ttd-ketua-rt-${rt}').value=''; document.getElementById('preview-ttd-ketua-rt-${rt}-wrapper').style.display='none'; hapusTtdCanvas('ketua-rt-${rt}');">✕ Reset</button>
+                    </div>
+                  </div>
+                </div>`).join('')}
               </div>
               <div class="mb-3">
                 <label class="form-label font-semibold text-xs text-gray-700">NOMOR WHATSAPP DEFAULT LAPORAN RW <small class="text-primary font-bold">(Untuk Laporan Aduan, Surat & Sumbangan)</small></label>
@@ -2846,7 +2831,7 @@ async function renderPengaturanRTView() {
                 <div class="col-md-3">
                   <label class="form-label text-[10px] font-bold text-muted uppercase">NIK Warga <span class="text-danger">*</span></label>
                   <select id="reg-nik" class="form-select form-select-sm" onchange="let rtOpt=this.options[this.selectedIndex].getAttribute('data-rt'); let rtEl=document.getElementById('reg-rt'); if(rtOpt && rtEl) rtEl.value = rtOpt;">
-                    <option value="">-- Pilih dari Data Warga --</option>
+                    <option value="">-- Pilih dari Data Warga (${wargaListForReg.length} belum punya akun) --</option>
                     ${wargaListForReg.map(w => {
                       let wNik = cariNilaiKolom(w, ['nik', 'ktp']);
                       let wNama = cariNilaiKolom(w, ['nama_lengkap', 'nama']);
@@ -2991,8 +2976,8 @@ async function renderPengaturanRTView() {
     </div>`;
   document.getElementById('main-content').innerHTML = html;
   setTimeout(function() {
-    initTtdSignaturePad('canvas-ttd-sekretaris', 'sekretaris');
-    initTtdSignaturePad('canvas-ttd-ketua', 'ketua');
+    initTtdSignaturePad('canvas-ttd-ketua-rt', 'ketua-rt');
+    ['29','30','31','32'].forEach(rt => initTtdSignaturePad('canvas-ttd-ketua-rt-' + rt, 'ketua-rt-' + rt));
   }, 100);
 }
 document.addEventListener("DOMContentLoaded", function() {
