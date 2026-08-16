@@ -1899,7 +1899,7 @@ let appSettings = {
   rt_rw_text: 'RW 08 - Blok Pekuncen',
   rw_number: '08',
   rt_list: ['29', '30', '31', '32'],
-  nama_kelurahan: '(Isi nama kelurahan/kecamatan di menu Pengaturan)',
+  nama_kelurahan: 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon',
   alamat_rt: 'Blok Pekuncen, RW 08',
   app_logo: './img/logo.webp',
   app_theme: 'blue',
@@ -2678,7 +2678,7 @@ async function renderPengaturanRTView() {
                 </div>
                 <div class="col-md-4">
                   <label class="form-label font-semibold text-xs text-gray-700">KELURAHAN / KECAMATAN / KOTA</label>
-                  <input type="text" id="set-nama-kelurahan" class="form-control" value="${appSettings.nama_kelurahan || 'Kelurahan Palmerah, Kota Jakarta Barat'}" placeholder="Contoh: Kelurahan Palmerah, Kota Jakarta Barat">
+                  <input type="text" id="set-nama-kelurahan" class="form-control" value="${appSettings.nama_kelurahan || 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon'}" placeholder="Contoh: Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label font-semibold text-xs text-gray-700">ALAMAT SEKRETARIAT RW</label>

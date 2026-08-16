@@ -149,7 +149,8 @@ function cetakPDFSuratPengantar(id) {
 
   let titleApp = (typeof appSettings !== 'undefined' && appSettings.app_title) ? appSettings.app_title : 'Pekuncen Digital';
   let rtRwText = (typeof appSettings !== 'undefined' && appSettings.rt_rw_text) ? appSettings.rt_rw_text : 'RW 08 - Blok Pekuncen';
-  let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Kelurahan Palmerah, Kota Jakarta Barat';
+  let rwNomor = (typeof appSettings !== 'undefined' && appSettings.rw_number) ? appSettings.rw_number : '08';
+  let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
   let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
   // Ketua RT mengikuti RT spesifik warga pemohon; fallback ke label generik kalau RT tidak valid/belum diatur
@@ -197,9 +198,8 @@ function cetakPDFSuratPengantar(id) {
         .kop-surat { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 16px; }
         .kop-logo { width: 70px; height: 70px; object-fit: contain; margin-right: 16px; }
         .kop-text { flex: 1; text-align: center; }
-        .kop-text h2 { margin: 0; font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kop-text h3 { margin: 2px 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; }
-        .kop-text p { margin: 0; font-size: 9pt; font-style: italic; }
+        .kop-text h2 { margin: 0; font-size: 16pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kop-text p { margin: 4px 0 0 0; font-size: 9pt; font-style: italic; }
         
         .surat-title { text-align: center; margin-bottom: 14px; }
         .surat-title h4 { margin: 0; font-size: 13pt; text-decoration: underline; text-transform: uppercase; font-weight: bold; }
@@ -229,8 +229,7 @@ function cetakPDFSuratPengantar(id) {
       <div class="kop-surat">
         <img src="${logoUrl}" class="kop-logo" alt="Logo Pekuncen Digital">
         <div class="kop-text">
-          <h2>PENGURUS ${rtRwText.toUpperCase()}</h2>
-          <h3>${titleApp}</h3>
+          <h2>PENGURUS RW ${rwNomor} – BLOK PEKUNCEN</h2>
           <p>${kelurahanText}${alamatRtText ? ' • ' + alamatRtText : ''}</p>
         </div>
       </div>
@@ -249,22 +248,27 @@ function cetakPDFSuratPengantar(id) {
         <p style="color:#92400e; font-size:8pt; margin:3px 0 0 0;">Tanda tangan akan muncul setelah status surat diubah menjadi <b>Selesai</b> atau <b>Diterima</b> oleh RT.</p>
       </div>` : ''}
 
-      <p style="text-align:right; margin: 0 0 6px 0; font-size:11pt;">Pekuncen, ${todayStr}</p>
-      <table class="ttd-section">
+      <table style="width:100%; border-collapse:collapse; margin-top: 10px;">
+        <tr>
+          <td style="width:50%;"></td>
+          <td style="width:50%; text-align:center; font-size:11pt; padding:0 10px;">Pekuncen, ${todayStr}</td>
+        </tr>
+      </table>
+      <table class="ttd-section" style="margin-top: 4px;">
         <tr>
           <td>
-            <p>Dibuat oleh:<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
+            <p>Dibuat oleh,<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
             <div class="ttd-space">
               ${ttdKetuaRtSpesifik ? `<img src="${ttdKetuaRtSpesifik}" style="max-height: 70px; max-width: 150px; object-fit: contain; margin: 0 auto; display: block;">` : ''}
             </div>
-            <p class="ttd-nama">( ${namaKetuaRtSpesifik} )</p>
+            <p class="ttd-nama">${namaKetuaRtSpesifik}</p>
           </td>
           <td>
-            <p>Diketahui oleh:<br><b>Ketua ${rtRwText}</b></p>
+            <p>Mengetahui,<br><b>Ketua ${rtRwText}</b></p>
             <div class="ttd-space">
               ${ttdKetuaRt ? `<img src="${ttdKetuaRt}" style="max-height: 70px; max-width: 150px; object-fit: contain; margin: 0 auto; display: block;">` : ''}
             </div>
-            <p class="ttd-nama">( ${namaKetuaRt} )</p>
+            <p class="ttd-nama">${namaKetuaRt}</p>
           </td>
         </tr>
       </table>

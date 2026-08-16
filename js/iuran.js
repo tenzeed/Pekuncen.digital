@@ -577,10 +577,6 @@ function bukaModalEditIuranRT(id) {
   let months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
   let bulanOpts = months.map(m => `<option value="${m}" ${m === bulanVal ? 'selected' : ''}>${m}</option>`).join('');
   let currentYear = new Date().getFullYear();
-  let yearOptions = '';
-  for (let y = currentYear - 2; y <= currentYear + 3; y++) {
-    yearOptions += `<option value="${y}" ${String(y) === String(tahunVal) ? 'selected' : ''}>${y}</option>`;
-  }
   let htmlForm = `
     <div class="p-2 space-y-3 text-xs">
       <div>
@@ -599,9 +595,7 @@ function bukaModalEditIuranRT(id) {
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
-        <select id="edit-iuran-tahun" class="w-full p-2 border rounded-xl bg-white">
-          ${yearOptions}
-        </select>
+        <input type="number" id="edit-iuran-tahun" value="${tahunVal || currentYear}" class="w-full p-2 border rounded-xl bg-white" min="2020" max="2100">
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan (Rp)</label>
@@ -689,10 +683,6 @@ async function bukaModalTambahIuranRT() {
     });
   }
   let currentYear = new Date().getFullYear();
-  let yearOptions = '';
-  for (let y = currentYear - 2; y <= currentYear + 3; y++) {
-    yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
-  }
   let htmlForm = `
     <div class="p-2 space-y-3 text-xs">
       <div>
@@ -724,9 +714,7 @@ async function bukaModalTambahIuranRT() {
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
-        <select id="iuran-input-tahun" class="w-full p-2 border rounded-xl bg-white">
-          ${yearOptions}
-        </select>
+        <input type="number" id="iuran-input-tahun" value="${currentYear}" class="w-full p-2 border rounded-xl bg-white" min="2020" max="2100">
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan (Rp)</label>
@@ -752,10 +740,6 @@ async function bukaModalTambahIuranRT() {
 
 async function bukaModalGenerateMassal() {
   let currentYear = new Date().getFullYear();
-  let yearOptions = '';
-  for (let y = currentYear - 1; y <= currentYear + 2; y++) {
-    yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
-  }
   let bulanSekarang = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][new Date().getMonth()];
   let htmlForm = `
     <div class="p-2 space-y-3 text-xs">
@@ -780,7 +764,7 @@ async function bukaModalGenerateMassal() {
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Tahun</label>
-        <select id="massal-tahun" class="w-full p-2 border rounded-xl bg-white">${yearOptions}</select>
+        <input type="number" id="massal-tahun" value="${currentYear}" class="w-full p-2 border rounded-xl bg-white" min="2020" max="2100">
       </div>
       <div>
         <label class="font-bold text-gray-600 mb-1 block">Nominal Tagihan per Warga (Rp)</label>
