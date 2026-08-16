@@ -211,8 +211,8 @@ function cetakPDFSuratPengantar(id) {
         .table-data td.label { width: 170px; }
         
         .ttd-row { display: flex; justify-content: space-between; padding: 0 1cm; }
-        .ttd-row > .ttd-left { width: 45%; text-align: left; }
-        .ttd-row > .ttd-right { width: 45%; text-align: left; }
+        .ttd-row > .ttd-left { width: 5cm; text-align: left; }
+        .ttd-row > .ttd-right { width: 5cm; text-align: left; }
         .ttd-section { margin-top: 4px; page-break-inside: avoid; }
         .ttd-section .ttd-col { text-align: left; font-size: 11pt; }
         .ttd-date-row { margin-top: 10px; font-size: 11pt; }
