@@ -150,7 +150,9 @@ function cetakPDFSuratPengantar(id) {
   let titleApp = (typeof appSettings !== 'undefined' && appSettings.app_title) ? appSettings.app_title : 'Pekuncen Digital';
   let rtRwText = (typeof appSettings !== 'undefined' && appSettings.rt_rw_text) ? appSettings.rt_rw_text : 'RW 08 - Blok Pekuncen';
   let rwNomor = (typeof appSettings !== 'undefined' && appSettings.rw_number) ? appSettings.rw_number : '08';
-  let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon';
+  // Alamat kop surat DIKUNCI langsung di sini (bukan dari Pengaturan/database),
+  // supaya selalu tampil benar dan tidak perlu diedit manual lewat UI.
+  let kelurahanText = 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
   let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
   // Ketua RT mengikuti RT spesifik warga pemohon; fallback ke label generik kalau RT tidak valid/belum diatur
