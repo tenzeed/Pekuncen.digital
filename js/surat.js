@@ -150,7 +150,7 @@ function cetakPDFSuratPengantar(id) {
   let titleApp = (typeof appSettings !== 'undefined' && appSettings.app_title) ? appSettings.app_title : 'Pekuncen Digital';
   let rtRwText = (typeof appSettings !== 'undefined' && appSettings.rt_rw_text) ? appSettings.rt_rw_text : 'RW 08 - Blok Pekuncen';
   let rwNomor = (typeof appSettings !== 'undefined' && appSettings.rw_number) ? appSettings.rw_number : '08';
-  let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Desa Palimanan Barat, Kec. Gempol, Kab. Cirebon';
+  let kelurahanText = (typeof appSettings !== 'undefined' && appSettings.nama_kelurahan) ? appSettings.nama_kelurahan : 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
   let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
   // Ketua RT mengikuti RT spesifik warga pemohon; fallback ke label generik kalau RT tidak valid/belum diatur
@@ -211,8 +211,10 @@ function cetakPDFSuratPengantar(id) {
         .table-data td.label { width: 170px; }
         
         .ttd-row { display: flex; justify-content: space-between; padding: 0 1cm; }
+        .ttd-row > .ttd-left { width: 45%; text-align: left; }
+        .ttd-row > .ttd-right { width: 45%; text-align: left; }
         .ttd-section { margin-top: 4px; page-break-inside: avoid; }
-        .ttd-section .ttd-col { text-align: left; font-size: 11pt; max-width: 45%; }
+        .ttd-section .ttd-col { text-align: left; font-size: 11pt; }
         .ttd-date-row { margin-top: 10px; font-size: 11pt; }
         .ttd-space { height: 55px; display: flex; align-items: center; justify-content: flex-start; }
         .ttd-nama { font-weight: bold; text-decoration: underline; margin: 0; }
@@ -232,7 +234,7 @@ function cetakPDFSuratPengantar(id) {
         <img src="${logoUrl}" class="kop-logo" alt="Logo Pekuncen Digital">
         <div class="kop-text">
           <h2>PENGURUS RW ${rwNomor} – BLOK PEKUNCEN</h2>
-          <p>${kelurahanText}${alamatRtText ? ' • ' + alamatRtText : ''}</p>
+          <p>${kelurahanText}</p>
         </div>
       </div>
 
@@ -251,18 +253,18 @@ function cetakPDFSuratPengantar(id) {
       </div>` : ''}
 
       <div class="ttd-row ttd-date-row">
-        <div></div>
-        <div>Pekuncen, ${todayStr}</div>
+        <div class="ttd-left"></div>
+        <div class="ttd-right">Pekuncen, ${todayStr}</div>
       </div>
       <div class="ttd-row ttd-section">
-        <div class="ttd-col">
+        <div class="ttd-left ttd-col">
           <p style="margin:0;">Dibuat oleh,<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
           <div class="ttd-space">
             ${ttdKetuaRtSpesifik ? `<img src="${ttdKetuaRtSpesifik}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
           </div>
           <p class="ttd-nama">${namaKetuaRtSpesifik}</p>
         </div>
-        <div class="ttd-col">
+        <div class="ttd-right ttd-col">
           <p style="margin:0;">Mengetahui,<br><b>Ketua RW ${rwNomor}</b></p>
           <div class="ttd-space">
             ${ttdKetuaRt ? `<img src="${ttdKetuaRt}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
