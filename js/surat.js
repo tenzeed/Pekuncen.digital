@@ -210,10 +210,10 @@ function cetakPDFSuratPengantar(id) {
         .table-data td { padding: 2px 8px; vertical-align: top; font-size: 11pt; }
         .table-data td.label { width: 170px; }
         
-        .ttd-section { width: 100%; table-layout: fixed; margin-top: 4px; border-collapse: collapse; border: none; page-break-inside: avoid; }
-        .ttd-section td { width: 50%; text-align: left; vertical-align: top; padding: 0 20px 0 0; font-size: 11pt; border: none; }
-        .ttd-date-row { width: 100%; table-layout: fixed; border-collapse: collapse; border: none; }
-        .ttd-date-row td { width: 50%; border: none; padding: 0 20px 0 0; font-size: 11pt; }
+        .ttd-row { display: flex; justify-content: space-between; padding: 0 1cm; }
+        .ttd-section { margin-top: 4px; page-break-inside: avoid; }
+        .ttd-section .ttd-col { text-align: left; font-size: 11pt; max-width: 45%; }
+        .ttd-date-row { margin-top: 10px; font-size: 11pt; }
         .ttd-space { height: 55px; display: flex; align-items: center; justify-content: flex-start; }
         .ttd-nama { font-weight: bold; text-decoration: underline; margin: 0; }
         
@@ -250,30 +250,26 @@ function cetakPDFSuratPengantar(id) {
         <p style="color:#92400e; font-size:8pt; margin:3px 0 0 0;">Tanda tangan akan muncul setelah status surat diubah menjadi <b>Selesai</b> atau <b>Diterima</b> oleh RT.</p>
       </div>` : ''}
 
-      <table class="ttd-date-row" style="margin-top: 10px;">
-        <tr>
-          <td></td>
-          <td>Pekuncen, ${todayStr}</td>
-        </tr>
-      </table>
-      <table class="ttd-section">
-        <tr>
-          <td>
-            <p style="margin:0;">Dibuat oleh,<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
-            <div class="ttd-space">
-              ${ttdKetuaRtSpesifik ? `<img src="${ttdKetuaRtSpesifik}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
-            </div>
-            <p class="ttd-nama">${namaKetuaRtSpesifik}</p>
-          </td>
-          <td>
-            <p style="margin:0;">Mengetahui,<br><b>Ketua RW ${rwNomor}</b></p>
-            <div class="ttd-space">
-              ${ttdKetuaRt ? `<img src="${ttdKetuaRt}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
-            </div>
-            <p class="ttd-nama">${namaKetuaRt}</p>
-          </td>
-        </tr>
-      </table>
+      <div class="ttd-row ttd-date-row">
+        <div></div>
+        <div>Pekuncen, ${todayStr}</div>
+      </div>
+      <div class="ttd-row ttd-section">
+        <div class="ttd-col">
+          <p style="margin:0;">Dibuat oleh,<br><b>Ketua RT ${rtValid ? rtWarga : '-'}</b></p>
+          <div class="ttd-space">
+            ${ttdKetuaRtSpesifik ? `<img src="${ttdKetuaRtSpesifik}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
+          </div>
+          <p class="ttd-nama">${namaKetuaRtSpesifik}</p>
+        </div>
+        <div class="ttd-col">
+          <p style="margin:0;">Mengetahui,<br><b>Ketua RW ${rwNomor}</b></p>
+          <div class="ttd-space">
+            ${ttdKetuaRt ? `<img src="${ttdKetuaRt}" style="max-height: 70px; max-width: 150px; object-fit: contain;">` : ''}
+          </div>
+          <p class="ttd-nama">${namaKetuaRt}</p>
+        </div>
+      </div>
 
       <script>
         window.onload = function() {
