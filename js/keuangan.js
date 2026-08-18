@@ -521,7 +521,7 @@ function cetakLaporanKeuanganPDF() {
   let namaKetuaRt    = (typeof appSettings !== 'undefined' && appSettings.nama_rt_ketua)    ? appSettings.nama_rt_ketua    : 'Ketua RT';
   let totalSaldo = totalMasuk - totalKeluar;
   let titleApp = (typeof appSettings !== 'undefined' && appSettings.app_title) ? appSettings.app_title : 'Pekuncen Digital';
-  let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
+  let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.png';
   let todayStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   let periodeLabel = { all: 'Semua Periode', hari: 'Hari Ini (' + todayStr + ')', bulan: 'Bulan ' + now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }), tahun: 'Tahun ' + now.getFullYear(), custom: (start || '...') + ' s/d ' + (end || '...') }[p] || 'Semua Periode';
 

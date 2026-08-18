@@ -1033,7 +1033,7 @@ function requestNotifPermission() {
 function triggerNativeBrowserNotif(title, body) {
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
-      let notifIcon = appSettings.app_logo || './img/logo.jpg';
+      let notifIcon = appSettings.app_logo || './img/logo.png';
       if (navigator.serviceWorker && navigator.serviceWorker.ready) {
         navigator.serviceWorker.ready.then(reg => {
           reg.showNotification(title, {
@@ -1901,7 +1901,7 @@ let appSettings = {
   rt_list: ['29', '30', '31', '32'],
   nama_kelurahan: 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon',
   alamat_rt: 'Blok Pekuncen, RW 08',
-  app_logo: './img/logo.webp',
+  app_logo: './img/logo.png',
   app_theme: 'blue',
   app_theme_color: '#1e3a8a',
   nama_rt_ketua: 'Ketua RW 08',
@@ -1926,7 +1926,7 @@ function updateDynamicManifest() {
     let baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
     let absStartUrl = baseUrl + 'index.html';
     let absScope = baseUrl;
-    let logoUrl = appSettings.app_logo || './img/logo.jpg';
+    let logoUrl = appSettings.app_logo || './img/logo.png';
     let mimeType = 'image/jpeg';
     if (logoUrl.startsWith('data:image/png')) mimeType = 'image/png';
     else if (logoUrl.startsWith('data:image/jpeg') || logoUrl.startsWith('data:image/jpg')) mimeType = 'image/jpeg';
@@ -2754,7 +2754,7 @@ async function renderPengaturanRTView() {
                   <div class="p-3 bg-light border rounded-3 mb-2">
                     <div class="d-flex align-items-center gap-3">
                       <div class="text-center">
-                        <img id="preview-logo-upload" src="${appSettings.app_logo || './img/logo.jpg'}" alt="Preview Logo" class="rounded-circle border shadow-sm app-logo-img" style="width: 55px; height: 55px; object-fit: cover;">
+                        <img id="preview-logo-upload" src="${appSettings.app_logo || './img/logo.png'}" alt="Preview Logo" class="border app-logo-img" style="width: 55px; height: 55px; object-fit: contain;">
                         <small class="d-block text-[9px] text-gray-500 mt-1 font-bold">Pratinjau</small>
                       </div>
                       <div class="flex-grow-1 space-y-2">

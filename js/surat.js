@@ -154,7 +154,7 @@ function cetakPDFSuratPengantar(id) {
   // supaya selalu tampil benar dan tidak perlu diedit manual lewat UI.
   let kelurahanText = 'Desa Palimanan Barat, Kecamatan Gempol, Kabupaten Cirebon';
   let alamatRtText = (typeof appSettings !== 'undefined' && appSettings.alamat_rt) ? appSettings.alamat_rt : '';
-  let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.webp';
+  let logoUrl = (typeof appSettings !== 'undefined' && appSettings.app_logo) ? appSettings.app_logo : './img/logo.png';
   // Ketua RT mengikuti RT spesifik warga pemohon; fallback ke label generik kalau RT tidak valid/belum diatur
   let rtValid = ['29','30','31','32'].includes(String(rtWarga).trim());
   let namaKetuaRtSpesifik = (typeof appSettings !== 'undefined' && rtValid && appSettings['nama_ketua_rt_' + rtWarga])
